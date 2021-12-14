@@ -75,11 +75,16 @@ def make_dense_mat(row, col):
 
 
 if __name__ == '__main__':
+    # mat_a 原始16 * 16的稀疏矩阵    metadata 用来随机稀疏的列表
     mat_a, metadata = make_sparse_mat(M, K)
+    # compressed_mat_a 根据metadata压缩后的mat_a 16 * 8
     compressed_mat_a = compress_sparse_mat(mat_a, metadata)
     bin_meta = metadata_to_binary(metadata)
+    # 随机的 16 * 8 的矩阵
     mat_b = make_dense_mat(K, N)
+    # 随机的 16 * 8 的矩阵
     mat_c = make_dense_mat(M, N)
+    # d = a * b + c
     mat_d = np.matmul(mat_a, mat_b) + mat_c
 
     compressed_mat_a.tofile('a.bin')
