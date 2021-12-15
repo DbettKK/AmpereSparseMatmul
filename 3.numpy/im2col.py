@@ -1,5 +1,7 @@
+import time
+
 import numpy as np
-import matplotlib
+import torch
 
 
 def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.ndarray:
@@ -33,18 +35,39 @@ def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.nd
     return col
 
 
+def torch_conv(data, core):
+    data = torch.from_numpy(data)
+    core = torch.from_numpy(core.reshape(1, 3, 2, 2))
+    start = time.time()
+    print(torch.nn.functional.conv2d(input=data, weight=core))
+    print(time.time() - start)
+
+
+def im2col_conv(data, core):
+
+    data = im2col(data, 2, 2)
+    core = core.reshape(12, 1)
+    start = time.time()
+    print(np.matmul(data, core).reshape(3, 3))
+    print(time.time() - start)
+
+
 def main():
-    input_data = np.arange(16*3).reshape(1, 3, 4, 4)
-    #print(input_data)
-    data = im2col(input_data, 2, 2)
+    input_data = np.arange(16*3, dtype=int).reshape(1, 3, 4, 4)
+    input_core = np.ones(12, dtype=int)
 
-    data1 = data.T.reshape(3, 4, 9).transpose(0, 2, 1)
-    core1 = np.ones(12).reshape(3, 4, 1)
-    print(np.einsum("ijk,ikn->ijn", data1, core1).reshape(3, 3, 3))
+    torch_conv(input_data, input_core)
+    im2col_conv(input_data, input_core)
 
-    data2 = data
-    core2 = np.ones(12*4).reshape(4, 12, 1)
-    print(np.matmul(data2, core2).reshape(3, 3))
+    #data = im2col(input_data, 2, 2)
+
+    # data1 = data.T.reshape(3, 4, 9).transpose(0, 2, 1)
+    # core1 = np.ones(12).reshape(3, 4, 1)
+    # print(np.einsum("ijk,ikn->ijn", data1, core1).reshape(3, 3, 3))
+
+    #data2 = data
+    #core2 = np.ones(12).reshape(12, 1)
+    #print(np.matmul(data2, core2).reshape(3, 3))
 
 
 if __name__ == '__main__':
