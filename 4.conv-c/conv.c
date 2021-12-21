@@ -1,20 +1,28 @@
 #include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
 
-#define MAX 12
+#include"conv.h"
 
-typedef struct Data {
-    int C;
-    int H;
-    int W;
-    int data[MAX][MAX];
-} Data;
+void input() {
+    Data *data = malloc(sizeof(Data));
+    scanf("%d%d%d%d", &data->B, &data->C, &data->H, &data->W);
+    int data_size = data->B * data->C * data->H * data->W;
+    data->data = malloc(data_size * sizeof(int));
+    
+    Core *core = malloc(sizeof(Core));
+    scanf("%d%d%d", &core->C, &core->H, &core->W);
+    int core_size = core->C * core->H * core->W;
+    core->core = malloc(core_size * sizeof(int));
 
-typedef struct Core {
-    int H;
-    int W;
-    int core[MAX][MAX];
-} Core;
+    int padding, stride;
+    scanf("%d%d", &padding, &stride);
 
+    printData(data);
+    padData(data, padding);
+    printData(data);
+    //conv(data, core);
+}
 
 void conv(Data *data, Core *core) {
     int data_h = data->H, data_w = data->W;
@@ -23,5 +31,6 @@ void conv(Data *data, Core *core) {
 }
 
 int main() {
-
+    input();
+    return 0;
 }

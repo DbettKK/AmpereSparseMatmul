@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib
+#import matplotlib
 
 
 def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.ndarray:
@@ -34,17 +34,13 @@ def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.nd
 
 
 def main():
-    input_data = np.arange(16*3).reshape(1, 3, 4, 4)
-    #print(input_data)
-    data = im2col(input_data, 2, 2)
+    input_data = np.arange(50).reshape(1, 2, 5, 5)
+    print(input_data)
+    data = im2col(input_data, 3, 3)
+    print(data)
 
-    data1 = data.T.reshape(3, 4, 9).transpose(0, 2, 1)
-    core1 = np.ones(12).reshape(3, 4, 1)
-    print(np.einsum("ijk,ikn->ijn", data1, core1).reshape(3, 3, 3))
-
-    data2 = data
-    core2 = np.ones(12*4).reshape(4, 12, 1)
-    print(np.matmul(data2, core2).reshape(3, 3))
+    core = np.ones(18 * 3).reshape(3, 2, 3, 3)
+    print(np.matmul(data, core.reshape(18, 3)).T.reshape(3, 3, 3))
 
 
 if __name__ == '__main__':
