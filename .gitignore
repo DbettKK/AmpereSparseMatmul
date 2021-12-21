@@ -2,3 +2,4 @@
 *.dsYM
 conv
 *.vscode
+.token

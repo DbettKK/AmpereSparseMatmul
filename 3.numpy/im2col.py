@@ -1,5 +1,7 @@
+import time
 import numpy as np
 #import matplotlib
+import torch
 
 
 def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.ndarray:
@@ -31,6 +33,23 @@ def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.nd
 
     col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
     return col
+
+
+def torch_conv(data, core):
+    data = torch.from_numpy(data)
+    core = torch.from_numpy(core.reshape(1, 3, 2, 2))
+    start = time.time()
+    print(torch.nn.functional.conv2d(input=data, weight=core))
+    print(time.time() - start)
+
+
+def im2col_conv(data, core):
+
+    data = im2col(data, 2, 2)
+    core = core.reshape(12, 1)
+    start = time.time()
+    print(np.matmul(data, core).reshape(3, 3))
+    print(time.time() - start)
 
 
 def main():
