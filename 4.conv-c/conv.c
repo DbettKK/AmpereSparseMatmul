@@ -11,24 +11,34 @@ void input() {
     data->data = malloc(data_size * sizeof(int));
     
     Core *core = malloc(sizeof(Core));
-    scanf("%d%d%d", &core->C, &core->H, &core->W);
-    int core_size = core->C * core->H * core->W;
+    scanf("%d%d%d", &core->OUT, &core->H, &core->W);
+    core->C = data->C;
+    int core_size = core->OUT * core->C * core->H * core->W;
     core->core = malloc(core_size * sizeof(int));
 
     int padding, stride;
     scanf("%d%d", &padding, &stride);
 
-    printData(data);
+    generateData(data);
+    generateCore(core);
+
     padData(data, padding);
+
     printData(data);
-    //conv(data, core);
+    printCore(core);
+    
+    Output *out = malloc(sizeof(Output));
+    out->B = data->B;
+    out->OUT = core->OUT;
+    out->H = (data->H - core->H) / stride + 1;  // 输出矩阵的高
+    out->W = (data->W - core->W) / stride + 1;  // 输出矩阵的宽
+    out->output = malloc(out->B * out->OUT * out->H * out->W * sizeof(int));
+
+    conv(data, core, stride, out);
+
+    printOutput(out);
 }
 
-void conv(Data *data, Core *core) {
-    int data_h = data->H, data_w = data->W;
-    int core_h = core->H, core_w = core->W;
-    
-}
 
 int main() {
     input();

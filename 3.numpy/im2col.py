@@ -1,7 +1,7 @@
 import time
 import numpy as np
 #import matplotlib
-import torch
+#import torch
 
 
 def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.ndarray:
@@ -35,12 +35,12 @@ def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.nd
     return col
 
 
-def torch_conv(data, core):
-    data = torch.from_numpy(data)
-    core = torch.from_numpy(core.reshape(1, 3, 2, 2))
-    start = time.time()
-    print(torch.nn.functional.conv2d(input=data, weight=core))
-    print(time.time() - start)
+# def torch_conv(data, core):
+#     data = torch.from_numpy(data)
+#     core = torch.from_numpy(core.reshape(1, 3, 2, 2))
+#     start = time.time()
+#     print(torch.nn.functional.conv2d(input=data, weight=core))
+#     print(time.time() - start)
 
 
 def im2col_conv(data, core):
@@ -53,13 +53,13 @@ def im2col_conv(data, core):
 
 
 def main():
-    input_data = np.arange(50).reshape(1, 2, 5, 5)
+    input_data = np.arange(1, 97).reshape(3, 2, 4, 4)
     print(input_data)
-    data = im2col(input_data, 3, 3)
-    print(data)
+    data = im2col(input_data, 3, 3, 1, 2)
+    print(data.shape)
 
-    core = np.ones(18 * 3).reshape(3, 2, 3, 3)
-    print(np.matmul(data, core.reshape(18, 3)).T.reshape(3, 3, 3))
+    core = np.ones(18 * 5).reshape(5, 2, 3, 3)
+    print(np.matmul(data, core.reshape(18, 5)).T.reshape(3, 5, 6, 6))
 
 
 if __name__ == '__main__':

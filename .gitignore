@@ -3,3 +3,4 @@
 conv
 *.vscode
 .token
+.DS_Store
