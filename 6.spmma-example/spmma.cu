@@ -26,22 +26,32 @@
 constexpr int EXIT_UNSUPPORTED = 2;
 
 int main(void) {
+    // 检查GPU是否支持cuSparseLt
     int major_cc, minor_cc;
-    CHECK_CUDA( cudaDeviceGetAttribute(&major_cc,
-                                       cudaDevAttrComputeCapabilityMajor, 0) )
-    CHECK_CUDA( cudaDeviceGetAttribute(&minor_cc,
-                                       cudaDevAttrComputeCapabilityMinor, 0) )
-    if (!(major_cc == 8 && minor_cc == 0) &&
-        !(major_cc == 8 && minor_cc == 6)) {
+    CHECK_CUDA( cudaDeviceGetAttribute(&major_cc, cudaDevAttrComputeCapabilityMajor, 0) )
+    CHECK_CUDA( cudaDeviceGetAttribute(&minor_cc, cudaDevAttrComputeCapabilityMinor, 0) )
+    if (!(major_cc == 8 && minor_cc == 0) && !(major_cc == 8 && minor_cc == 6)) {
         std::printf("\ncusparseLt is supported only on GPU devices with"
                     " compute capability == 8.0, 8.6 current: %d.%d\n\n",
                      major_cc, minor_cc);
         return EXIT_UNSUPPORTED;
     }
+
+    // 卷积运算
+    int data_size = 217;    // 217 * 217
+    int core_size = 3;      // 3 * 3
+    int stride = 2;         // 步长
+    int padding = 2;
+
+    // im2col
+    int out_size = (data_size + 2 * padding - core_size) / stride + 1;
+    int m_tmp = out_size * out_size, n_tmp = core_size * core_size;
+    int k_tmp = 1;
+
     // Host problem definition, row-major order
-    constexpr int m     = 32; // bigger sizes may require dynamic allocations
-    constexpr int n     = 32; // bigger sizes may require dynamic allocations
-    constexpr int k     = 32; // bigger sizes may require dynamic allocations
+    constexpr int m     = m_tmp; // bigger sizes may require dynamic allocations
+    constexpr int n     = n_tmp; // bigger sizes may require dynamic allocations
+    constexpr int k     = k_tmp; // bigger sizes may require dynamic allocations
     auto          order = CUSPARSE_ORDER_ROW;
     auto          opA   = CUSPARSE_OPERATION_NON_TRANSPOSE;
     auto          opB   = CUSPARSE_OPERATION_NON_TRANSPOSE;
@@ -70,6 +80,7 @@ int main(void) {
     __half hA[m * k];
     __half hB[k * n];
     __half hC[m * n] = {};
+    // 初始化 D = α * A * B + β * C
     for (int i = 0; i < m * k; i++)
         hA[i] = static_cast<__half>(static_cast<float>(std::rand() % 10));
     for (int i = 0; i < k * n; i++)
@@ -101,8 +112,7 @@ int main(void) {
     CHECK_CUSPARSE( cusparseLtStructuredDescriptorInit(
                                             &handle, &matA, num_A_rows,
                                             num_A_cols, lda, alignment,
-                                            type, order,
-                                            CUSPARSELT_SPARSITY_50_PERCENT) )
+                                            type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
     CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(
                                             &handle, &matB, num_B_rows,
                                             num_B_cols, ldb, alignment,
@@ -119,7 +129,7 @@ int main(void) {
     CHECK_CUSPARSE( cusparseLtMatmulAlgSelectionInit(
                                             &handle, &alg_sel, &matmul,
                                             CUSPARSELT_MATMUL_ALG_DEFAULT) )
-    int alg = 0;
+    int alg = 0;    // 算法
     CHECK_CUSPARSE( cusparseLtMatmulAlgSetAttribute(
                                             &handle, &alg_sel,
                                             CUSPARSELT_MATMUL_ALG_CONFIG_ID,
