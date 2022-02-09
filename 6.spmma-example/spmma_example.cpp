@@ -38,6 +38,7 @@ int main(void) {
     }
 
     // 卷积运算
+    /*
     int data_size = 217;    // 217 * 217
     int core_size = 3;      // 3 * 3
     int stride = 2;         // 步长
@@ -47,11 +48,13 @@ int main(void) {
     int out_size = (data_size + 2 * padding - core_size) / stride + 1;
     int m_tmp = out_size * out_size, n_tmp = core_size * core_size;
     int k_tmp = 1;
+    */
 
     // Host problem definition, row-major order
-    constexpr int m     = m_tmp; // bigger sizes may require dynamic allocations
-    constexpr int n     = n_tmp; // bigger sizes may require dynamic allocations
-    constexpr int k     = k_tmp; // bigger sizes may require dynamic allocations
+    // m*k k*n
+    constexpr int m     = 256*256; // bigger sizes may require dynamic allocations
+    constexpr int n     = 1; // bigger sizes may require dynamic allocations
+    constexpr int k     = 16*16; // bigger sizes may require dynamic allocations
     auto          order = CUSPARSE_ORDER_ROW;
     auto          opA   = CUSPARSE_OPERATION_NON_TRANSPOSE;
     auto          opB   = CUSPARSE_OPERATION_NON_TRANSPOSE;
