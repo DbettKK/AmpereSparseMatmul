@@ -41,7 +41,7 @@ int main(void) {
     /*
     int data_size = 217;    // 217 * 217
     int core_size = 3;      // 3 * 3
-    int stride = 2;         // 步长
+    int stride = 6;         // 步长
     int padding = 2;
 
     // im2col
