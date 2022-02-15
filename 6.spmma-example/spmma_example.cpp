@@ -40,9 +40,10 @@ int main(void) {
     // 卷积运算
     /*
     int data_size = 217;    // 217 * 217
-    int core_size = 3;      // 3 * 3
+    int core_size = 7;      // 3 * 3
     int stride = 6;         // 步长
-    int padding = 2;
+    int padding = 6;
+    // int output_size = 112; // 112 * 112
 
     // im2col
     int out_size = (data_size + 2 * padding - core_size) / stride + 1;
