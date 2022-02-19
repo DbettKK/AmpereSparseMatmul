@@ -35,7 +35,7 @@ void print_matrix(__half *item, int row, int col) {
     }
 }
 
-void expose(constexpr int m, constexpr int n, constexpr int k) {
+int expose(int m, int n, int k) {
     // 检查GPU是否支持cuSparseLt
     int major_cc, minor_cc;
     CHECK_CUDA( cudaDeviceGetAttribute(&major_cc, cudaDevAttrComputeCapabilityMajor, 0) )
