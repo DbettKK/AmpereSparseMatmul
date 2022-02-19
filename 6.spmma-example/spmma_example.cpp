@@ -53,9 +53,9 @@ int main(void) {
 
     // Host problem definition, row-major order
     // m*k k*n
-    constexpr int m     = 256*256; // bigger sizes may require dynamic allocations
-    constexpr int n     = 1; // bigger sizes may require dynamic allocations
-    constexpr int k     = 16*16; // bigger sizes may require dynamic allocations
+    constexpr int m     = 16; // bigger sizes may require dynamic allocations
+    constexpr int n     = 8; // bigger sizes may require dynamic allocations
+    constexpr int k     = 16; // bigger sizes may require dynamic allocations
     auto          order = CUSPARSE_ORDER_ROW;
     auto          opA   = CUSPARSE_OPERATION_NON_TRANSPOSE;
     auto          opB   = CUSPARSE_OPERATION_NON_TRANSPOSE;

@@ -9,6 +9,8 @@
 
 using namespace std;
 
+// spmma: 16x16 16x8 -> 16x8 m16n8k16
+
 #define CHECK_CUDA(func)                                                       \
 {                                                                              \
     cudaError_t status = (func);                                               \
@@ -136,6 +138,10 @@ __half *handle_output(__half *item, int m, int n) {
         }
     }
     return ret;
+}
+
+void tile(__half *item, int row, int col) {
+
 }
 
 void calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int k) {
