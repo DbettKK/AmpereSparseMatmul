@@ -2,6 +2,7 @@
 #include <cusparseLt.h>       // cusparseLt header
 #include <cstdio>             // printf
 #include <cstdlib>            // std::rand
+#include <iostream>
 
 #define CHECK_CUDA(func)                                                       \
 {                                                                              \
@@ -24,6 +25,15 @@
 }
 
 constexpr int EXIT_UNSUPPORTED = 2;
+
+void print_matrix(__half *item, int row, int col) {
+    for (int i = 0; i < row; i++) {
+        for (int j = 0; j < col; j++) {
+            std::cout << item[i * col + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 
 int main(void) {
     // 检查GPU是否支持cuSparseLt
@@ -89,6 +99,10 @@ int main(void) {
         hA[i] = static_cast<__half>(static_cast<float>(std::rand() % 10));
     for (int i = 0; i < k * n; i++)
         hB[i] = static_cast<__half>(static_cast<float>(std::rand() % 10));
+
+    print_matrix(hA, m, k);
+    print_matrix(hB, k, n);
+
     float alpha = 1.0f;
     float beta  = 0.0f;
     //--------------------------------------------------------------------------
@@ -232,6 +246,8 @@ int main(void) {
             }
         }
     }
+    print_matrix(hC, m, n);
+
     if (correct)
         std::printf("spmma_example test PASSED\n");
     else
