@@ -35,7 +35,7 @@ void print_matrix(__half *item, int row, int col) {
     }
 }
 
-void expose(constexpr int m, constexpr int n, constexpr int k) {
+int expose(int m, int n, int k) {
     // 检查GPU是否支持cuSparseLt
     int major_cc, minor_cc;
     CHECK_CUDA( cudaDeviceGetAttribute(&major_cc, cudaDevAttrComputeCapabilityMajor, 0) )
@@ -100,8 +100,8 @@ void expose(constexpr int m, constexpr int n, constexpr int k) {
     for (int i = 0; i < k * n; i++)
         hB[i] = static_cast<__half>(static_cast<float>(std::rand() % 10));
 
-    print_matrix(hA, m, k);
-    print_matrix(hB, k, n);
+    //print_matrix(hA, m, k);
+    //print_matrix(hB, k, n);
 
     float alpha = 1.0f;
     float beta  = 0.0f;
@@ -246,7 +246,7 @@ void expose(constexpr int m, constexpr int n, constexpr int k) {
             }
         }
     }
-    print_matrix(hC, m, n);
+    //print_matrix(hC, m, n);
 
     if (correct)
         std::printf("spmma_example test PASSED\n");
@@ -263,6 +263,25 @@ void expose(constexpr int m, constexpr int n, constexpr int k) {
 }
 
 int main() {
+    /*std::cout<<"m=16,n=16,k=8:"<<std::endl;
+    expose(16, 16, 8);
+    std::cout<<"\nm=16,n=8,k=16:"<<std::endl;
     expose(16, 8, 16);
+    std::cout<<"\nm=8,n=16,k=16:"<<std::endl;
+    expose(8, 16, 16);
+    std::cout<<"\nm=8,n=16,k=8:"<<std::endl;
+    expose(8, 16, 8);
+    std::cout<<"\nm=16,n=8,k=8:"<<std::endl;
+    expose(16, 8, 8);
+    std::cout<<"\nm=8,n=8,k=16:"<<std::endl;
+    expose(8, 8, 16);
+    std::cout<<"\nm=8,n=8,k=8:"<<std::endl;
+    expose(8, 8, 8);
+    std::cout<<"\nm=16,n=16,k=16:"<<std::endl;*/
+    //expose(16,8,16);
+    /*for (int i = 0; i < 16; i++) {
+        expose(16, 16, 16);
+    }*/
+    expose(32,32,32);
 }
 

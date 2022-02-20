@@ -15,6 +15,10 @@ LIBS         := -lcudart -lcusparse -ldl ${NVRTC_SHARED}
 
 all: spmma_example spmma_example_static
 
+t: spmma_example.cpp
+	nvcc -ptx --std=c++14 ${INCS} spmma_example.cpp \
+		-L${CUSPARSELT_PATH}/lib64  -lcusparseLt ${LIBS}
+
 spmma_example: spmma_example.cpp
 	nvcc --std=c++14  ${INCS}  spmma_example.cpp -o spmma_example  \
          -L${CUSPARSELT_PATH}/lib64  -lcusparseLt ${LIBS}
