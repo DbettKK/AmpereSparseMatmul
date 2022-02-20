@@ -264,5 +264,9 @@ int expose(int m, int n, int k) {
 
 int main() {
     expose(16, 8, 16);
+    // todo
+    // 完成测试 (16, 16, 16) x4 和 (32, 32, 32) 性能比较
+    // 对ptx版本使用cuobjdump进行查看
+
 }
 
