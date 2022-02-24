@@ -164,6 +164,14 @@ int expose(int m, int n, int k) {
                                          CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA,
                                               d_valid, stream) )
+    __half hA_tmp[m * k];
+    CHECK_CUDA( cudaMemcpy(hA_tmp, dA, m * k, cudaMemcpyDeviceToHost) )
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < k; j++) {
+            printf("%d ", hA_tmp[i * k + j]);
+        }
+        printf("\n");
+    }
     int is_valid;
     CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid),
                                 cudaMemcpyDeviceToHost, stream) )
@@ -189,6 +197,7 @@ int expose(int m, int n, int k) {
     for (int i = 0; i < compressed_size; i++) {
         printf("%d ", hA_cmpr[i]);
     }
+    printf("\n");
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Search the best kernel
     void*         d_workspace = nullptr;
