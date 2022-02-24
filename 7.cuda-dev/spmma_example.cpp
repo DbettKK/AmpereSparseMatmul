@@ -177,10 +177,18 @@ int expose(int m, int n, int k) {
     // Compress the A matrix
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan,
                                                   &compressed_size) )
+    // 得到compressed_size
+    printf("===compressed_size=%d\n", compressed_size);
     CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
-
+    // 压缩
     CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA,
                                             dA_compressed, stream) )
+    // 尝试打印输出
+    __half hA_cmpr[compressed_size];
+    CHECK_CUDA( cudaMemcpy(hA, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+    for (int i = 0; i < compressed_size; i++) {
+        printf("%d ", hA_cmpr[i]);
+    }
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Search the best kernel
     void*         d_workspace = nullptr;

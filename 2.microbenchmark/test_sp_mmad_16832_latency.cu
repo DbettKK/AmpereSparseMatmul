@@ -196,4 +196,5 @@ int main(int argc, char **argv) {
   delete[] duration_host;
 
   return 0;
+  //mma.sp.sync.aligned.m16n8k32 latency: 29.0002 cycle
 }
