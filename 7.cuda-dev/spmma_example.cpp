@@ -100,7 +100,7 @@ int expose(int m, int n, int k) {
     for (int i = 0; i < k * n; i++)
         hB[i] = static_cast<__half>(static_cast<float>(std::rand() % 10));
 
-    //print_matrix(hA, m, k);
+   // print_matrix(hA, m, k);
     //print_matrix(hB, k, n);
 
     float alpha = 1.0f;
@@ -164,14 +164,19 @@ int expose(int m, int n, int k) {
                                          CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA,
                                               d_valid, stream) )
-    __half hA_tmp[m * k];
+    /*__half hA_tmp[m * k];
+    int cnt = 0;
     CHECK_CUDA( cudaMemcpy(hA_tmp, dA, m * k, cudaMemcpyDeviceToHost) )
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < k; j++) {
             printf("%d ", hA_tmp[i * k + j]);
+	    if (hA_tmp[i*k+j] == 0) {
+	    	cnt++;
+	    }
         }
         printf("\n");
     }
+    printf("--------------cnt=%d, m*k=%d\n", cnt, m * k);*/
     int is_valid;
     CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid),
                                 cudaMemcpyDeviceToHost, stream) )
@@ -192,12 +197,13 @@ int expose(int m, int n, int k) {
     CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA,
                                             dA_compressed, stream) )
     // 尝试打印输出
+    /*
     __half hA_cmpr[compressed_size];
     CHECK_CUDA( cudaMemcpy(hA, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
     for (int i = 0; i < compressed_size; i++) {
         printf("%d ", hA_cmpr[i]);
     }
-    printf("\n");
+    printf("\n");*/
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Search the best kernel
     void*         d_workspace = nullptr;
@@ -299,7 +305,7 @@ int main() {
     /*for (int i = 0; i < 16; i++) {
         expose(16, 16, 16);
     }*/
-    expose(32,32,32);
+    expose(256,256,256);
     // todo
     // 完成测试 (16, 16, 16) x4 和 (32, 32, 32) 性能比较
     // 对ptx版本使用cuobjdump进行查看
