@@ -100,7 +100,7 @@ int expose(int m, int n, int k) {
     for (int i = 0; i < k * n; i++)
         hB[i] = static_cast<__half>(static_cast<float>(std::rand() % 10));
 
-   // print_matrix(hA, m, k);
+    print_matrix(hA, m, k);
     //print_matrix(hB, k, n);
 
     float alpha = 1.0f;
@@ -235,6 +235,8 @@ int expose(int m, int n, int k) {
     // matrix A has been pruned
     CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
+
+    print_matrix(hA, m, k);
 
     bool A_std_layout = (is_rowmajor != isA_transposed);
     bool B_std_layout = (is_rowmajor != isB_transposed);
