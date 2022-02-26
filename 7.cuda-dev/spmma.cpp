@@ -37,6 +37,8 @@ struct Matrix {
     int row, col;
 };
 
+constexpr int EXIT_UNSUPPORTED = 2;
+
 int init() {
     // 检查GPU是否支持cuSparseLt
     int major_cc, minor_cc;
