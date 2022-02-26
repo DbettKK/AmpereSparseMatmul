@@ -37,7 +37,7 @@ struct Matrix {
     int row, col;
 };
 
-void init() {
+int init() {
     // 检查GPU是否支持cuSparseLt
     int major_cc, minor_cc;
     CHECK_CUDA( cudaDeviceGetAttribute(&major_cc, cudaDevAttrComputeCapabilityMajor, 0) )
