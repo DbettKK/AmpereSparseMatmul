@@ -483,12 +483,17 @@ int main() {
     rand(hA, m, k);
     rand(hB, k, n);
     memset(hC, 0, m * n * sizeof(__half));
-    rand(hC, m, n);
+    //rand(hC, m, n);
     print_matrix(hA, m, k);
     cout << endl;
     print_matrix(hB, k, n);
     cout << endl;
     print_matrix(hC, m, n);
     cout << endl;
+
+    print_matrix(show_cpu(hA, hB, m, n), m, n);
+    cout << endl;
     expose(hA, hB, hC, m, n, k);
+
+
 }
