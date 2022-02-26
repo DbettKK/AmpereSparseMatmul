@@ -21,8 +21,10 @@ using namespace std;
     }                                                                          \
 }
 
-// 记录矩阵的size是否发生变化 全局变量
-int m_fix = 0, k_fix = 0, n_fix = 0;
+struct Matrix {
+    __half *item;
+    int row, col;
+};
 
 void init() {
     // 检查GPU是否支持cuSparseLt
@@ -60,6 +62,156 @@ void input(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     CHECK_CUDA( cudaMemcpy(dA, hA, A_size, cudaMemcpyHostToDevice) )
     CHECK_CUDA( cudaMemcpy(dB, hB, B_size, cudaMemcpyHostToDevice) )
     CHECK_CUDA( cudaMemcpy(dC, hC, C_size, cudaMemcpyHostToDevice) )
+}
+
+// m->8 n->8 k->16
+Matrix *padding_struct(Matrix *matrix, int flag) {
+    Matrix *out = (Matrix *)malloc(sizeof(Matrix));
+    int row = matrix->row, col = matrix->col;
+    if (flag == 0) {
+        // m * k
+        if (row % 8 == 0 && col % 16 == 0) {
+            return matrix;
+        } else if (row % 8 == 0 && col % 16) {
+            int fix = 16 - col % 16;
+            __half *tmp = (__half *)malloc(row * (col + fix) * sizeof(__half));
+            int cnt = 0;
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    tmp[cnt++] = matrix->item[i * col + j];
+                }
+                for (int j = 0; j < fix; j++) {
+                    tmp[cnt++] = 0;
+                }
+            }
+            out->item = tmp;
+            out->row = row;
+            out->col = col + fix;
+            return out;
+        } else if (row % 8 && col % 16 == 0) {
+            int fix = 8 - row % 8;
+            __half *tmp = (__half *)malloc((row + fix) * col * sizeof(__half));
+            memset(tmp, 0, (row + fix) * col * sizeof(__half));
+            memcpy(tmp, matrix->item, row * col * sizeof(__half));
+            out->item = tmp;
+            out->row = row + fix;
+            out->col = col;
+            return out;
+        } else {
+            int fix_row = 8 - row % 8;
+            int fix_col = 16 - col % 16;
+            __half *tmp = (__half *)malloc((row + fix_row) * (col + fix_col) * sizeof(__half));
+            memset(tmp, 0, (row + fix_row) * (col + fix_col) * sizeof(__half));
+            int cnt = 0;
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    tmp[cnt++] = matrix->item[i * col + j];
+                }
+                for (int j = 0; j < fix_col; j++) {
+                    tmp[cnt++] = 0;
+                }
+            }
+            out->item = tmp;
+            out->row = row + fix_row;
+            out->col = col + fix_col;
+            return out;
+        }
+    } else if (flag == 1) {
+        // k * n
+        if (row % 16 == 0 && col % 8 == 0) {
+            return matrix;
+        } else if (row % 16 == 0 && col % 8) {
+            int fix = 8 - col % 8;
+            __half *tmp = (__half *)malloc(row * (col + fix) * sizeof(__half));
+            int cnt = 0;
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    tmp[cnt++] = matrix->item[i * col + j];
+                }
+                for (int j = 0; j < fix; j++) {
+                    tmp[cnt++] = 0;
+                }
+            }
+            out->item = tmp;
+            out->row = row;
+            out->col = col + fix;
+            return out;
+        } else if (row % 16 && col % 8 == 0) {
+            int fix = 16 - row % 16;
+            __half *tmp = (__half *)malloc((row + fix) * col * sizeof(__half));
+            memset(tmp, 0, (row + fix) * col * sizeof(__half));
+            memcpy(tmp, matrix->item, row * col * sizeof(__half));
+            out->item = tmp;
+            out->row = row + fix;
+            out->col = col;
+            return out;
+        } else {
+            int fix_row = 16 - row % 16;
+            int fix_col = 8 - col % 8;
+            __half *tmp = (__half *)malloc((row + fix_row) * (col + fix_col) * sizeof(__half));
+            memset(tmp, 0, (row + fix_row) * (col + fix_col) * sizeof(__half));
+            int cnt = 0;
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    tmp[cnt++] = matrix->item[i * col + j];
+                }
+                for (int j = 0; j < fix_col; j++) {
+                    tmp[cnt++] = 0;
+                }
+            }
+            out->item = tmp;
+            out->row = row + fix_row;
+            out->col = col + fix_col;
+            return out;
+        }
+    } else if (flag == 2) {
+        // m * n
+        if (row % 8 == 0 && col % 8 == 0) {
+            return matrix;
+        } else if (row % 8 == 0 && col % 8) {
+            int fix = 8 - col % 8;
+            __half *tmp = (__half *)malloc(row * (col + fix) * sizeof(__half));
+            int cnt = 0;
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    tmp[cnt++] = matrix->item[i * col + j];
+                }
+                for (int j = 0; j < fix; j++) {
+                    tmp[cnt++] = 0;
+                }
+            }
+            out->item = tmp;
+            out->row = row;
+            out->col = col + fix;
+        } else if (row % 8 && col % 8 == 0) {
+            int fix = 8 - row % 8;
+            __half *tmp = (__half *)malloc((row + fix) * col * sizeof(__half));
+            memset(tmp, 0, (row + fix) * col * sizeof(__half));
+            memcpy(tmp, matrix->item, row * col * sizeof(__half));
+            out->item = tmp;
+            out->row = row + fix;
+            out->col = col;
+            return out;
+        } else {
+            int fix_row = 8 - row % 8;
+            int fix_col = 8 - col % 8;
+            __half *tmp = (__half *)malloc((row + fix_row) * (col + fix_col) * sizeof(__half));
+            memset(tmp, 0, (row + fix_row) * (col + fix_col) * sizeof(__half));
+            int cnt = 0;
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
+                    tmp[cnt++] = matrix->item[i * col + j];
+                }
+                for (int j = 0; j < fix_col; j++) {
+                    tmp[cnt++] = 0;
+                }
+            }
+            out->item = tmp;
+            out->row = row + fix_row;
+            out->col = col + fix_col;
+            return out;
+        }
+    }
 }
 
 __half *handle_input(__half *item, int m, int n, int flag) {
@@ -127,14 +279,14 @@ __half *handle_input(__half *item, int m, int n, int flag) {
     return ret;
 }
 
-__half *handle_output(__half *item, int m, int n) {
-    if (!m_fix && !n_fix) {
+__half *handle_output(__half *item, int m, int m_pad, int n, int n_pad) {
+    if (m_pad == m && n_pad == n) {
         return item;
     }
-    __half *ret = (__half *)malloc((m - m_fix) * (n - n_fix) * sizeof(__half));
-    for (int i = 0; i < m - m_fix; i++) {
-        for (int j = 0; j < n - n_fix; j++) {
-            ret[i * (n - n_fix) + j] = item[i * n + j];
+    __half *ret = (__half *)malloc(m * n * sizeof(__half));
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            ret[i * n + j] = item[i * n_pad + j];
         }
     }
     return ret;
@@ -237,7 +389,7 @@ void calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, in
     // matrix A has been pruned
     CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
-
+    CHECK_CUDA( cudaMemcpy(hD, dD, C_size, cudaMemcpyDeviceToHost) )
 }
 
 void print(__half *item, int row, int col) {
@@ -249,22 +401,35 @@ void print(__half *item, int row, int col) {
     }
 }
 
+
 void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     init();
-    hA = handle_input(hA, m, k, 0);
-    hB = handle_input(hB, k, n, 1);
-    hC = handle_input(hC, m, n, 2);
-    m = m + m_fix;
-    n = n + n_fix;
-    k = k + k_fix;
-    __half *hD = (__half *)malloc(m * n * sizeof(__half));
-    calculate(hA, hB, hC, hD, m, n, k);
-    __half *output = handle_output(hD, m, n);
+    Matrix *mA = (Matrix *)malloc(sizeof(Matrix));
+    Matrix *mB = (Matrix *)malloc(sizeof(Matrix));
+    Matrix *mC = (Matrix *)malloc(sizeof(Matrix));
+    mA->item = hA;
+    mA->row = m;
+    mA->col = k;
+    mB->item = hB;
+    mB->row = k;
+    mB->col = n;
+    mC->item = hC;
+    mC->row = m;
+    mC->col = n;
+    Matrix *A_out = padding_struct(mA, 0);
+    Matrix *B_out = padding_struct(mB, 0);
+    Matrix *C_out = padding_struct(mC, 0);
+    int m_pad = A_out->row, n_pad = C_out->col, k_pad = A_out->col;
+    __half *hD = (__half *)malloc(m_pad * n_pad * sizeof(__half));
+
+    calculate(A_out->item, B_out->item, C_out->item, hD, m_pad, n_pad, k_pad);
+
+    __half *output = handle_output(hD, m, m_pad, n, n_pad);
     print(output, m, n);
 }
 
 int main() {
-    int m = 0, k = 0, n = 0;
+    int m = 16, k = 16, n = 8;
     __half *hA = (__half *)malloc(m * k * sizeof(__half));
     __half *hB = (__half *)malloc(k * n * sizeof(__half));
     __half *hC = (__half *)malloc(m * n * sizeof(__half));
