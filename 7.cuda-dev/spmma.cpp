@@ -64,10 +64,16 @@ __half *show_cpu(__half *A, __half *B, int m, int n, int k) {
     __half *ret = (__half *)malloc(sizeof(__half) * m * n);
     memset(ret, 0, sizeof(m * n));
     for (int i = 0; i < m; i++) {
-        for (int j = 0; j < k; j++) {
-            for (int v = 0; v < n; v++) {
-                ret[i * n + v] = ret[i * n + v] + static_cast<__half>(A[i * k + j] * B[j * n + v]);
+        for (int j = 0; j < n; j++) {
+            float sum  = 0.0f;
+            for (int k1 = 0; k1 < k; k1++) {
+                auto posA =  i * k + k1;
+                auto posB =  k1 * n + j;
+                sum      += static_cast<float>(A[posA]) *  // [i][k]
+                            static_cast<float>(B[posB]);   // [k][j]
             }
+            auto posC       = i * n + j;
+            ret[posC] = sum;  // [i][j]
         }
     }
     return ret;
@@ -469,7 +475,8 @@ void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     calculate(A_out->item, B_out->item, C_out->item, hD, m_pad, n_pad, k_pad);
 
     __half *output = handle_output(hD, m, m_pad, n, n_pad);
-    print(output, m, n);
+    cout<<"D: "<<endl;
+    print_matrix(output, m, n);
 }
 
 void rand(__half *item, int m, int n) {
