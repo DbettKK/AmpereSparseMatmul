@@ -60,6 +60,19 @@ void print_matrix(__half *item, int row, int col) {
     }
 }
 
+__half *show_cpu(__half *A, __half *B, int m, int n, int k) {
+    __half *ret = (__half *)malloc(sizeof(__half) * m * n);
+    memset(ret, 0, sizeof(m * n));
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < k; j++) {
+            for (int v = 0; v < n; v++) {
+                ret[i * n + v] = A[i * k + j] * B[j * n + v];
+            }
+        }
+    }
+    return ret;
+}
+
 //int input(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
 //    //__half hA[m * k];
 //    //__half hB[k * n];
@@ -467,18 +480,7 @@ void rand(__half *item, int m, int n) {
     }
 }
 
-__half *show_cpu(__half *A, __half *B, int m, int n, int k) {
-    __half *ret = (__half *)malloc(sizeof(__half) * m * n);
-    memset(ret, 0, sizeof(m * n));
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < k; j++) {
-            for (int v = 0; v < n; v++) {
-                ret[i * n + v] = A[i * k + j] * B[j * n + v];
-            }
-        }
-    }
-    return ret;
-}
+
 
 int main() {
     int m = 16, k = 16, n = 8;
