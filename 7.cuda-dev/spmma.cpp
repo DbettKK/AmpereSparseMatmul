@@ -48,7 +48,7 @@ void init() {
     }
 }
 
-void input(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
+int input(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     //__half hA[m * k];
     //__half hB[k * n];
     //__half hC[m * n] = {};
@@ -91,7 +91,7 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
                     tmp[cnt++] = matrix->item[i * col + j];
                 }
                 for (int j = 0; j < fix; j++) {
-                    tmp[cnt++] = 0;
+                    tmp[cnt++] = static_cast<__half>(0);
                 }
             }
             out->item = tmp;
@@ -118,7 +118,7 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
                     tmp[cnt++] = matrix->item[i * col + j];
                 }
                 for (int j = 0; j < fix_col; j++) {
-                    tmp[cnt++] = 0;
+                    tmp[cnt++] = static_cast<__half>(0);
                 }
             }
             out->item = tmp;
@@ -139,7 +139,7 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
                     tmp[cnt++] = matrix->item[i * col + j];
                 }
                 for (int j = 0; j < fix; j++) {
-                    tmp[cnt++] = 0;
+                    tmp[cnt++] = static_cast<__half>(0);
                 }
             }
             out->item = tmp;
@@ -166,7 +166,7 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
                     tmp[cnt++] = matrix->item[i * col + j];
                 }
                 for (int j = 0; j < fix_col; j++) {
-                    tmp[cnt++] = 0;
+                    tmp[cnt++] = static_cast<__half>(0);
                 }
             }
             out->item = tmp;
@@ -187,7 +187,7 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
                     tmp[cnt++] = matrix->item[i * col + j];
                 }
                 for (int j = 0; j < fix; j++) {
-                    tmp[cnt++] = 0;
+                    tmp[cnt++] = static_cast<__half>(0);
                 }
             }
             out->item = tmp;
@@ -213,7 +213,7 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
                     tmp[cnt++] = matrix->item[i * col + j];
                 }
                 for (int j = 0; j < fix_col; j++) {
-                    tmp[cnt++] = 0;
+                    tmp[cnt++] = static_cast<__half>(0);
                 }
             }
             out->item = tmp;
