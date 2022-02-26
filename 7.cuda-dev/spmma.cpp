@@ -505,6 +505,4 @@ int main() {
     print_matrix(hC, m, n);
     cout << endl;
     expose(hA, hB, hC, m, n, k);
-
-
 }

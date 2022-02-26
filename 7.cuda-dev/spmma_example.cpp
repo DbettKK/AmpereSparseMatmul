@@ -235,11 +235,12 @@ int expose(int m, int n, int k) {
     // matrix A has been pruned
     CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(hD, dD, C_size, cudaMemcpyDeviceToHost) )
+    __half *hD_tmp = (__half *)malloc(sizeof(__half) * m * n);
+    CHECK_CUDA( cudaMemcpy(hD_tmp, dD, C_size, cudaMemcpyDeviceToHost) )
 
     print_matrix(hA, m, k);
     print_matrix(hC, m, n);
-    print_matrix(hD, m, n);
+    print_matrix(hD_tmp, m, n);
 
     bool A_std_layout = (is_rowmajor != isA_transposed);
     bool B_std_layout = (is_rowmajor != isB_transposed);
