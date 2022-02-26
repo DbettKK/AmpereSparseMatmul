@@ -462,6 +462,19 @@ void rand(__half *item, int m, int n) {
     }
 }
 
+__half *show_cpu(__half *A, __half *B, int m, int n, int k) {
+    __half *ret = (__half *)malloc(sizeof(__half) * m * n);
+    memset(ret, 0, sizeof(m * n));
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < k; j++) {
+            for (int v = 0; v < n; v++) {
+                ret[i][k] = A[i][j] * B[j][v];
+            }
+        }
+    }
+    return ret;
+}
+
 int main() {
     int m = 16, k = 16, n = 8;
     __half *hA = (__half *)malloc(m * k * sizeof(__half));
@@ -469,6 +482,7 @@ int main() {
     __half *hC = (__half *)malloc(m * n * sizeof(__half));
     rand(hA, m, k);
     rand(hB, k, n);
+    memset(hC, 0, m * n * sizeof(__half));
     rand(hC, m, n);
     print_matrix(hA, m, k);
     print_matrix(hB, k, n);
