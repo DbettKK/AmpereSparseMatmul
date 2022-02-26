@@ -315,6 +315,8 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
     int lda = k, ldb = n, ldc = n;
     auto          opA   = CUSPARSE_OPERATION_NON_TRANSPOSE;
     auto          opB   = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    float alpha = 1.0f;
+    float beta  = 0.0f;
 
     unsigned alignment = 16;
 
