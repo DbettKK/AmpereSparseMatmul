@@ -468,7 +468,7 @@ __half *show_cpu(__half *A, __half *B, int m, int n, int k) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < k; j++) {
             for (int v = 0; v < n; v++) {
-                ret[i][k] = A[i][j] * B[j][v];
+                ret[i * n + k] = A[i * k + j] * B[j * n + v];
             }
         }
     }
