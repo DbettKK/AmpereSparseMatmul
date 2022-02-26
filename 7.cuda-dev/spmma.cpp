@@ -214,70 +214,70 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
     }
 }
 
-__half *handle_input(__half *item, int m, int n, int flag) {
-    if (m % 8 == 0 && n % 8 == 0) {
-        return item;
-    }
-    if (m % 8 == 0) {
-        int fix = 8 - n % 8;
-        __half *ret = (__half *)malloc(m * (n + fix) * sizeof(__half));
-        int ret_cnt = 0;
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                ret[ret_cnt++] = item[i * n + j];
-            }
-            for (int j = 0; j < fix; j++) {
-                ret[ret_cnt++] = 0;
-            }
-        }
-        if (flag == 1 || flag = 2) {
-            n_fix = fix;
-        }
-        if (flag == 0) {
-            k_fix = fix;
-        }
-        return ret;
-    }
-    if (n % 8 == 0) {
-        int fix = 8 - m % 8;
-        __half *ret = (__half *)malloc((m + fix) * n * sizeof(__half));
-        memset(ret, 0, (m + fix) * n * sizeof(__half));
-        memcpy(ret, item, m * n * sizeof(__half));
-        if (flag == 0 || flag == 2) {
-            m_fix = fix;
-        }
-        if (flag == 1) {
-            k_fix = fix;
-        }
-        return ret;
-    }
-    int fix_m = 8 - m % 8;
-    int fix_n = 8 - n % 8;
-    __half *ret = (__half *)malloc((m + fix_m) * (n + fix_n) * sizeof(__half));
-    memset(ret, 0, (m + fix_m) * (n + fix_n) * sizeof(__half));
-    int ret_cnt = 0;
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-            ret[ret_cnt++] = item[i * n + j];
-        }
-        for (int j = 0; j < fix_n; j++) {
-            ret[ret_cnt++] = 0;
-        }
-    }
-    if (flag == 0) {
-        m_fix = fix_m;
-        k_fix = fix_n;
-    }
-    if (flag == 1) {
-        n_fix = fix_n;
-        k_fix = fix_m;
-    }
-    if (flag == 2) {
-        m_fix = fix_m;
-        n_fix = fix_n;
-    }
-    return ret;
-}
+//__half *handle_input(__half *item, int m, int n, int flag) {
+//    if (m % 8 == 0 && n % 8 == 0) {
+//        return item;
+//    }
+//    if (m % 8 == 0) {
+//        int fix = 8 - n % 8;
+//        __half *ret = (__half *)malloc(m * (n + fix) * sizeof(__half));
+//        int ret_cnt = 0;
+//        for (int i = 0; i < m; i++) {
+//            for (int j = 0; j < n; j++) {
+//                ret[ret_cnt++] = item[i * n + j];
+//            }
+//            for (int j = 0; j < fix; j++) {
+//                ret[ret_cnt++] = 0;
+//            }
+//        }
+//        if (flag == 1 || flag = 2) {
+//            n_fix = fix;
+//        }
+//        if (flag == 0) {
+//            k_fix = fix;
+//        }
+//        return ret;
+//    }
+//    if (n % 8 == 0) {
+//        int fix = 8 - m % 8;
+//        __half *ret = (__half *)malloc((m + fix) * n * sizeof(__half));
+//        memset(ret, 0, (m + fix) * n * sizeof(__half));
+//        memcpy(ret, item, m * n * sizeof(__half));
+//        if (flag == 0 || flag == 2) {
+//            m_fix = fix;
+//        }
+//        if (flag == 1) {
+//            k_fix = fix;
+//        }
+//        return ret;
+//    }
+//    int fix_m = 8 - m % 8;
+//    int fix_n = 8 - n % 8;
+//    __half *ret = (__half *)malloc((m + fix_m) * (n + fix_n) * sizeof(__half));
+//    memset(ret, 0, (m + fix_m) * (n + fix_n) * sizeof(__half));
+//    int ret_cnt = 0;
+//    for (int i = 0; i < m; i++) {
+//        for (int j = 0; j < n; j++) {
+//            ret[ret_cnt++] = item[i * n + j];
+//        }
+//        for (int j = 0; j < fix_n; j++) {
+//            ret[ret_cnt++] = 0;
+//        }
+//    }
+//    if (flag == 0) {
+//        m_fix = fix_m;
+//        k_fix = fix_n;
+//    }
+//    if (flag == 1) {
+//        n_fix = fix_n;
+//        k_fix = fix_m;
+//    }
+//    if (flag == 2) {
+//        m_fix = fix_m;
+//        n_fix = fix_n;
+//    }
+//    return ret;
+//}
 
 __half *handle_output(__half *item, int m, int m_pad, int n, int n_pad) {
     if (m_pad == m && n_pad == n) {
@@ -296,7 +296,7 @@ void tile(__half *item, int row, int col) {
 
 }
 
-void calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int k) {
+int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int k) {
     int A_size = m * k * sizeof(__half);
     int B_size = k * n * sizeof(__half);
     int C_size = m * n * sizeof(__half);
