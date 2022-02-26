@@ -491,7 +491,7 @@ int main() {
     print_matrix(hC, m, n);
     cout << endl;
 
-    print_matrix(show_cpu(hA, hB, m, n), m, n);
+    print_matrix(show_cpu(hA, hB, m, n, k), m, n);
     cout << endl;
     expose(hA, hB, hC, m, n, k);
 
