@@ -416,6 +416,11 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
     CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hD, dD, C_size, cudaMemcpyDeviceToHost) )
+    cout<<"C:"<<endl;
+    print_matrix(hC, m, n);
+    cout<<"CPU:"<<endl;
+    print_matrix(show_cpu(hA, hB, m, n, k), m, n);
+
 }
 
 void print(__half *item, int row, int col) {
@@ -468,7 +473,7 @@ __half *show_cpu(__half *A, __half *B, int m, int n, int k) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < k; j++) {
             for (int v = 0; v < n; v++) {
-                ret[i * n + k] = A[i * k + j] * B[j * n + v];
+                ret[i * n + v] = A[i * k + j] * B[j * n + v];
             }
         }
     }
@@ -489,9 +494,6 @@ int main() {
     print_matrix(hB, k, n);
     cout << endl;
     print_matrix(hC, m, n);
-    cout << endl;
-
-    print_matrix(show_cpu(hA, hB, m, n, k), m, n);
     cout << endl;
     expose(hA, hB, hC, m, n, k);
 
