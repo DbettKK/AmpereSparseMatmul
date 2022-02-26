@@ -429,9 +429,9 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
     CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hD, dD, C_size, cudaMemcpyDeviceToHost) )
-    cout<<"C:"<<endl;
-    print_matrix(hC, m, n);
-    cout<<"CPU:"<<endl;
+    cout<<"A_compress: "<<endl;
+    print_matrix(hA, m, n);
+    cout<<"CPU: "<<endl;
     print_matrix(show_cpu(hA, hB, m, n, k), m, n);
 
 }
