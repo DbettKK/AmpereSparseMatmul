@@ -4,6 +4,7 @@
 #include<cstdio>
 #include<cstring>
 #include<cuda_fp16.h>
+#include <cstdlib>
 #include<fstream>
 #include<iostream>
 
@@ -48,31 +49,31 @@ void init() {
     }
 }
 
-int input(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
-    //__half hA[m * k];
-    //__half hB[k * n];
-    //__half hC[m * n] = {};
-    // 必须要求hA hB hC不是常量指针
-    hA = handle_input(hA, m, k, 0);
-    hB = handle_input(hB, k, n, 1);
-    hC = handle_input(hC, m, n, 2);
-
-    int A_size = m * k * sizeof(__half);
-    int B_size = k * n * sizeof(__half);
-    int C_size = m * n * sizeof(__half);
-
-    __half *dA, *dB, *dC, *dD, *dA_compressed;
-    int    *d_valid;
-    CHECK_CUDA( cudaMalloc((void**) &dA, A_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dB, B_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dC, C_size) )
-    CHECK_CUDA( cudaMalloc((void**) &d_valid, sizeof(d_valid)) )
-    dD = dC;
-
-    CHECK_CUDA( cudaMemcpy(dA, hA, A_size, cudaMemcpyHostToDevice) )
-    CHECK_CUDA( cudaMemcpy(dB, hB, B_size, cudaMemcpyHostToDevice) )
-    CHECK_CUDA( cudaMemcpy(dC, hC, C_size, cudaMemcpyHostToDevice) )
-}
+//int input(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
+//    //__half hA[m * k];
+//    //__half hB[k * n];
+//    //__half hC[m * n] = {};
+//    // 必须要求hA hB hC不是常量指针
+//    hA = handle_input(hA, m, k, 0);
+//    hB = handle_input(hB, k, n, 1);
+//    hC = handle_input(hC, m, n, 2);
+//
+//    int A_size = m * k * sizeof(__half);
+//    int B_size = k * n * sizeof(__half);
+//    int C_size = m * n * sizeof(__half);
+//
+//    __half *dA, *dB, *dC, *dD, *dA_compressed;
+//    int    *d_valid;
+//    CHECK_CUDA( cudaMalloc((void**) &dA, A_size) )
+//    CHECK_CUDA( cudaMalloc((void**) &dB, B_size) )
+//    CHECK_CUDA( cudaMalloc((void**) &dC, C_size) )
+//    CHECK_CUDA( cudaMalloc((void**) &d_valid, sizeof(d_valid)) )
+//    dD = dC;
+//
+//    CHECK_CUDA( cudaMemcpy(dA, hA, A_size, cudaMemcpyHostToDevice) )
+//    CHECK_CUDA( cudaMemcpy(dB, hB, B_size, cudaMemcpyHostToDevice) )
+//    CHECK_CUDA( cudaMemcpy(dC, hC, C_size, cudaMemcpyHostToDevice) )
+//}
 
 // m->8 n->8 k->16
 Matrix *padding_struct(Matrix *matrix, int flag) {
