@@ -51,6 +51,15 @@ int init() {
     }
 }
 
+void print_matrix(__half *item, int row, int col) {
+    for (int i = 0; i < row; i++) {
+        for (int j = 0; j < col; j++) {
+            cout << item[i * col + j] << " ";
+        }
+        cout << endl;
+    }
+}
+
 //int input(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
 //    //__half hA[m * k];
 //    //__half hB[k * n];
@@ -448,7 +457,7 @@ void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
 void rand(__half *item, int m, int n) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
-            item[i * n + j] = static_cast<__half>(static_cast<float>(rand() % 10));
+            item[i * n + j] = static_cast<__half>(static_cast<float>(rand() % 8));
         }
     }
 }
@@ -461,5 +470,8 @@ int main() {
     rand(hA, m, k);
     rand(hB, k, n);
     rand(hC, m, n);
+    print_matrix(hA, m, k);
+    print_matrix(hB, k, n);
+    print_matrix(hC, m, n);
     expose(hA, hB, hC, m, n, k);
 }
