@@ -485,7 +485,10 @@ int main() {
     memset(hC, 0, m * n * sizeof(__half));
     rand(hC, m, n);
     print_matrix(hA, m, k);
+    cout << endl;
     print_matrix(hB, k, n);
+    cout << endl;
     print_matrix(hC, m, n);
+    cout << endl;
     expose(hA, hB, hC, m, n, k);
 }
