@@ -313,6 +313,8 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
 
     // Leading dimension 如果行优先则代表列数
     int lda = k, ldb = n, ldc = n;
+    auto          opA   = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    auto          opB   = CUSPARSE_OPERATION_NON_TRANSPOSE;
 
     unsigned alignment = 16;
 
@@ -341,7 +343,7 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
     cudaStream_t                   stream = nullptr;
     CHECK_CUSPARSE( cusparseLtInit(&handle) )
     // matrix descriptor initialization
-    CHECK_CUSPARSE( cusparseLtStructuredDescriptorInitcusparseLtStructuredDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
+    CHECK_CUSPARSE( cusparseLtStructuredDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
     CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matB, k, n, ldb, alignment, type, order) )
     CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matC, m, n, ldc, alignment, type, order) )
     // matmul, algorithm selection, and plan initialization
