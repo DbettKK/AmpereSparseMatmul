@@ -428,10 +428,21 @@ void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     print(output, m, n);
 }
 
+void rand(__half *item, int m, int n) {
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            item[i * n + j] = static_cast<__half>(static_cast<float>(rand() % 10));
+        }
+    }
+}
+
 int main() {
     int m = 16, k = 16, n = 8;
     __half *hA = (__half *)malloc(m * k * sizeof(__half));
     __half *hB = (__half *)malloc(k * n * sizeof(__half));
     __half *hC = (__half *)malloc(m * n * sizeof(__half));
+    rand(hA, m, k);
+    rand(hB, k, n);
+    rand(hC, m, n);
     expose(hA, hB, hC, m, n, k);
 }
