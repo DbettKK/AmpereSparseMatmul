@@ -78,6 +78,21 @@ __half *gemm_cpu(__half *A, __half *B, int m, int n, int k) {
     return ret;
 }
 
+void cmp_cpu_gpu(__half *gpu, __half *cpu, int m, int n) {
+    int total = m * n, cnt = 0;
+    printf("total: %d\n", total);
+
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            int pos = i * n + j;
+            if (gpu[pos] - cpu[pos] > 0.01) {
+                cnt++;
+            }
+        }
+    }
+    printf("diff: %d\n", cnt);
+}
+
 // m->8 n->8 k->16
 Matrix *padding_struct(Matrix *matrix, int flag) {
     Matrix *out = (Matrix *)malloc(sizeof(Matrix));
@@ -365,8 +380,9 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     cout << "A_compress: " << endl;
     print_matrix(hA, m, n);
     cout<<" CPU: "<<endl;
-    print_matrix(gemm_cpu(hA, hB, m, n, k), m, n);
-
+    __half *cpu = gemm_cpu(hA, hB, m, n, k);
+    print_matrix(cpu, m, n);
+    cmp_cpu_gpu(hC, cpu, m, n);
 }
 
 void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
