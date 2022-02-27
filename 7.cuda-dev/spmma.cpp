@@ -1,10 +1,10 @@
-#include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-#include <cusparseLt.h>       // cusparseLt header
+#include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+#include<cusparseLt.h>       // cusparseLt header
 #include<cstdint>
 #include<cstdio>
 #include<cstring>
 #include<cuda_fp16.h>
-#include <cstdlib>
+#include<cstdlib>
 #include<fstream>
 #include<iostream>
 
@@ -60,50 +60,23 @@ void print_matrix(__half *item, int row, int col) {
     }
 }
 
-__half *show_cpu(__half *A, __half *B, int m, int n, int k) {
+__half *gemm_cpu(__half *A, __half *B, int m, int n, int k) {
     __half *ret = (__half *)malloc(sizeof(__half) * m * n);
     memset(ret, 0, sizeof(m * n));
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             float sum  = 0.0f;
-            for (int k1 = 0; k1 < k; k1++) {
-                auto posA =  i * k + k1;
-                auto posB =  k1 * n + j;
-                sum      += static_cast<float>(A[posA]) *  // [i][k]
-                            static_cast<float>(B[posB]);   // [k][j]
+            for (int v = 0; v < k; v++) {
+                int posA =  i * k + v; // A[i][v]
+                int posB =  v * n + j; // B[v][j]
+                sum += static_cast<float>(A[posA]) * static_cast<float>(B[posB]);
             }
-            auto posC       = i * n + j;
-            ret[posC] = sum;  // [i][j]
+            int posRet = i * n + j;
+            ret[posRet] = sum;  // [i][j]
         }
     }
     return ret;
 }
-
-//int input(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
-//    //__half hA[m * k];
-//    //__half hB[k * n];
-//    //__half hC[m * n] = {};
-//    // 必须要求hA hB hC不是常量指针
-//    hA = handle_input(hA, m, k, 0);
-//    hB = handle_input(hB, k, n, 1);
-//    hC = handle_input(hC, m, n, 2);
-//
-//    int A_size = m * k * sizeof(__half);
-//    int B_size = k * n * sizeof(__half);
-//    int C_size = m * n * sizeof(__half);
-//
-//    __half *dA, *dB, *dC, *dD, *dA_compressed;
-//    int    *d_valid;
-//    CHECK_CUDA( cudaMalloc((void**) &dA, A_size) )
-//    CHECK_CUDA( cudaMalloc((void**) &dB, B_size) )
-//    CHECK_CUDA( cudaMalloc((void**) &dC, C_size) )
-//    CHECK_CUDA( cudaMalloc((void**) &d_valid, sizeof(d_valid)) )
-//    dD = dC;
-//
-//    CHECK_CUDA( cudaMemcpy(dA, hA, A_size, cudaMemcpyHostToDevice) )
-//    CHECK_CUDA( cudaMemcpy(dB, hB, B_size, cudaMemcpyHostToDevice) )
-//    CHECK_CUDA( cudaMemcpy(dC, hC, C_size, cudaMemcpyHostToDevice) )
-//}
 
 // m->8 n->8 k->16
 Matrix *padding_struct(Matrix *matrix, int flag) {
@@ -255,71 +228,7 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
     }
 }
 
-//__half *handle_input(__half *item, int m, int n, int flag) {
-//    if (m % 8 == 0 && n % 8 == 0) {
-//        return item;
-//    }
-//    if (m % 8 == 0) {
-//        int fix = 8 - n % 8;
-//        __half *ret = (__half *)malloc(m * (n + fix) * sizeof(__half));
-//        int ret_cnt = 0;
-//        for (int i = 0; i < m; i++) {
-//            for (int j = 0; j < n; j++) {
-//                ret[ret_cnt++] = item[i * n + j];
-//            }
-//            for (int j = 0; j < fix; j++) {
-//                ret[ret_cnt++] = 0;
-//            }
-//        }
-//        if (flag == 1 || flag = 2) {
-//            n_fix = fix;
-//        }
-//        if (flag == 0) {
-//            k_fix = fix;
-//        }
-//        return ret;
-//    }
-//    if (n % 8 == 0) {
-//        int fix = 8 - m % 8;
-//        __half *ret = (__half *)malloc((m + fix) * n * sizeof(__half));
-//        memset(ret, 0, (m + fix) * n * sizeof(__half));
-//        memcpy(ret, item, m * n * sizeof(__half));
-//        if (flag == 0 || flag == 2) {
-//            m_fix = fix;
-//        }
-//        if (flag == 1) {
-//            k_fix = fix;
-//        }
-//        return ret;
-//    }
-//    int fix_m = 8 - m % 8;
-//    int fix_n = 8 - n % 8;
-//    __half *ret = (__half *)malloc((m + fix_m) * (n + fix_n) * sizeof(__half));
-//    memset(ret, 0, (m + fix_m) * (n + fix_n) * sizeof(__half));
-//    int ret_cnt = 0;
-//    for (int i = 0; i < m; i++) {
-//        for (int j = 0; j < n; j++) {
-//            ret[ret_cnt++] = item[i * n + j];
-//        }
-//        for (int j = 0; j < fix_n; j++) {
-//            ret[ret_cnt++] = 0;
-//        }
-//    }
-//    if (flag == 0) {
-//        m_fix = fix_m;
-//        k_fix = fix_n;
-//    }
-//    if (flag == 1) {
-//        n_fix = fix_n;
-//        k_fix = fix_m;
-//    }
-//    if (flag == 2) {
-//        m_fix = fix_m;
-//        n_fix = fix_n;
-//    }
-//    return ret;
-//}
-
+// 将之前padding的进行还原
 __half *handle_output(__half *item, int m, int m_pad, int n, int n_pad) {
     if (m_pad == m && n_pad == n) {
         return item;
@@ -333,19 +242,21 @@ __half *handle_output(__half *item, int m, int m_pad, int n, int n_pad) {
     return ret;
 }
 
+// 在整体较大时 需要进行tile
 void tile(__half *item, int row, int col) {
 
 }
 
-int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int k) {
+// hc hd都为输出
+int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int k) {
     int A_size = m * k * sizeof(__half);
     int B_size = k * n * sizeof(__half);
     int C_size = m * n * sizeof(__half);
 
     // Leading dimension 如果行优先则代表列数
     int lda = k, ldb = n, ldc = n;
-    auto          opA   = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    auto          opB   = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    auto opA = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    auto opB = CUSPARSE_OPERATION_NON_TRANSPOSE;
     float alpha = 1.0f;
     float beta  = 0.0f;
 
@@ -355,8 +266,9 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
     auto type  = CUDA_R_16F;
     auto compute_type = CUSPARSE_COMPUTE_16F;
 
+    // device
     __half *dA, *dB, *dC, *dD, *dA_compressed;
-    int    *d_valid;
+    int *d_valid;
     CHECK_CUDA( cudaMalloc((void**) &dA, A_size) )
     CHECK_CUDA( cudaMalloc((void**) &dB, B_size) )
     CHECK_CUDA( cudaMalloc((void**) &dC, C_size) )
@@ -391,13 +303,13 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
     //--------------------------------------------------------------------------
     // Prune the A matrix (in-place) and check the correcteness
     CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    // 这一步可以省略 ↑
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
     int is_valid;
     CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
     CHECK_CUDA( cudaStreamSynchronize(stream) )
     if (is_valid != 0) {
-        std::printf("!!!! The matrix has been pruned in a wrong way. "
-                    "cusparseLtMatmul will not provide correct results\n");
+        std::printf("!!!! The matrix has been pruned in a wrong way. cusparseLtMatmul will not provide correct results\n");
         return EXIT_FAILURE;
     }
     //--------------------------------------------------------------------------
@@ -408,14 +320,12 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
     CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Search the best kernel
-    void*         d_workspace = nullptr;
-    int           num_streams = 0;
-    cudaStream_t* streams     = nullptr;
-    CHECK_CUSPARSE( cusparseLtMatmulSearch(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC,dD, d_workspace,
-                                           streams, num_streams) )
+    void* d_workspace = nullptr;
+    int num_streams = 0;
+    cudaStream_t* streams = nullptr;
+    CHECK_CUSPARSE( cusparseLtMatmulSearch(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC,dD, d_workspace, streams, num_streams) )
     int alg_id;
-    CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID,
-                                           &alg_id, sizeof(alg_id)) )
+    CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg_id, sizeof(alg_id)) )
     printf("best alg: %d\n", alg_id);
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Perform the matrix multiplication
@@ -435,22 +345,12 @@ int calculate(__half *hA, __half *hB, __half *hC,  __half *hD, int m, int n, int
     CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hD, dD, C_size, cudaMemcpyDeviceToHost) )
-    cout<<"A_compress: "<<endl;
+    cout << "A_compress: " << endl;
     print_matrix(hA, m, n);
-    cout<<"CPU: "<<endl;
-    print_matrix(show_cpu(hA, hB, m, n, k), m, n);
+    cout<<" CPU: "<<endl;
+    print_matrix(gemm_cpu(hA, hB, m, n, k), m, n);
 
 }
-
-void print(__half *item, int row, int col) {
-    for (int i = 0; i < row; i++) {
-        for (int j = 0; j < col; j++) {
-            cout << item[i * col + j] << " ";
-        }
-        cout << endl;
-    }
-}
-
 
 void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     init();
@@ -475,7 +375,7 @@ void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     calculate(A_out->item, B_out->item, C_out->item, hD, m_pad, n_pad, k_pad);
 
     __half *output = handle_output(hD, m, m_pad, n, n_pad);
-    cout<<"D: "<<endl;
+    cout<<"GPU D: "<<endl;
     print_matrix(output, m, n);
 }
 
@@ -486,8 +386,6 @@ void rand(__half *item, int m, int n) {
         }
     }
 }
-
-
 
 int main() {
     int m = 16, k = 16, n = 8;
