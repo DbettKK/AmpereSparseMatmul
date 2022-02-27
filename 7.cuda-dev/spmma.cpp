@@ -39,7 +39,7 @@ struct Matrix {
 
 constexpr int EXIT_UNSUPPORTED = 2;
 
-int init() {
+int check_gpu() {
     // 检查GPU是否支持cuSparseLt
     int major_cc, minor_cc;
     CHECK_CUDA( cudaDeviceGetAttribute(&major_cc, cudaDevAttrComputeCapabilityMajor, 0) )
@@ -247,6 +247,23 @@ void tile(__half *item, int row, int col) {
 
 }
 
+__half **read_bin(int m, int n, int k) {
+    __half **ret = (__half **)malloc(sizeof(__half *) * 3);
+    __half *mat_a_host = new __half[m * k];
+    __half *mat_b_host = new __half[k * n];
+    __half *mat_c_host = new __half[m * n];
+    ifstream a_fs("a.bin", ios_base::binary);
+    a_fs.read((char *)mat_a_host, mat_a_size * sizeof(__half));
+    ifstream b_fs("b.bin", ios_base::binary);
+    b_fs.read((char *)mat_b_host, mat_b_size * sizeof(__half));
+    ifstream c_fs("c.bin", ios_base::binary);
+    c_fs.read((char *)mat_c_host, mat_c_d_size * sizeof(__half));
+    ret[0] = mat_a_host;
+    ret[1] = mat_b_host;
+    ret[2] = mat_c_host;
+    return ret;
+}
+
 // hc hd都为输出
 int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int k) {
     int A_size = m * k * sizeof(__half);
@@ -353,7 +370,8 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
 }
 
 void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
-    init();
+    check_gpu();
+
     Matrix *mA = (Matrix *)malloc(sizeof(Matrix));
     Matrix *mB = (Matrix *)malloc(sizeof(Matrix));
     Matrix *mC = (Matrix *)malloc(sizeof(Matrix));
@@ -369,13 +387,15 @@ void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     Matrix *A_out = padding_struct(mA, 0);
     Matrix *B_out = padding_struct(mB, 0);
     Matrix *C_out = padding_struct(mC, 0);
+
     int m_pad = A_out->row, n_pad = C_out->col, k_pad = A_out->col;
+
     __half *hD = (__half *)malloc(m_pad * n_pad * sizeof(__half));
 
     calculate(A_out->item, B_out->item, C_out->item, hD, m_pad, n_pad, k_pad);
 
     __half *output = handle_output(hD, m, m_pad, n, n_pad);
-    cout<<"GPU D: "<<endl;
+    cout << "GPU D: " << endl;
     print_matrix(output, m, n);
 }
 
