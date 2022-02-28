@@ -334,7 +334,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune the A matrix (in-place) and check the correcteness
-    // CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
     // 这一步可以省略 ↑
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
     int is_valid;
@@ -424,7 +424,7 @@ void rand(__half *item, int m, int n) {
 }
 
 int main() {
-    int m = 15, k = 14, n = 7;
+    int m = 15, k = 11, n = 2;
     __half **array = read_bin(m, n, k);
 //    __half *hA = (__half *)malloc(m * k * sizeof(__half));
 //    __half *hB = (__half *)malloc(k * n * sizeof(__half));
@@ -436,10 +436,13 @@ int main() {
     __half *hA = array[0];
     __half *hB = array[1];
     __half *hC = array[2];
+    cout << "A:" << endl;
     print_matrix(hA, m, k);
     cout << endl;
+    cout << "B:" << endl;
     print_matrix(hB, k, n);
     cout << endl;
+    cout << "C:" << endl;
     print_matrix(hC, m, n);
     cout << endl;
     expose(hA, hB, hC, m, n, k);

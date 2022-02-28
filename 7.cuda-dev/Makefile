@@ -12,7 +12,7 @@ profile:
 	nsys profile --stats=true ./spmma
 
 clean:
-	rm -f spmma spmma_static spmma.o a* spmma_d* report*
+	rm -f spmma spmma_static spmma.o a* spmma_d* report* *.bin
 
 test:
 	@echo "\n==== SpMMA Test ====\n"
