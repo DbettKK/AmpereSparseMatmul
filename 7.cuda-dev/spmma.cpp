@@ -268,11 +268,11 @@ __half **read_bin(int m, int n, int k) {
     __half *mat_b_host = new __half[k * n];
     __half *mat_c_host = new __half[m * n];
     ifstream a_fs("a.bin", ios_base::binary);
-    a_fs.read((char *)mat_a_host, mat_a_size * sizeof(__half));
+    a_fs.read((char *)mat_a_host, m * k * sizeof(__half));
     ifstream b_fs("b.bin", ios_base::binary);
-    b_fs.read((char *)mat_b_host, mat_b_size * sizeof(__half));
+    b_fs.read((char *)mat_b_host, k * n * sizeof(__half));
     ifstream c_fs("c.bin", ios_base::binary);
-    c_fs.read((char *)mat_c_host, mat_c_d_size * sizeof(__half));
+    c_fs.read((char *)mat_c_host, m * n * sizeof(__half));
     ret[0] = mat_a_host;
     ret[1] = mat_b_host;
     ret[2] = mat_c_host;
