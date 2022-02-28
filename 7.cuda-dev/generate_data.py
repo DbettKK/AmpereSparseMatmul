@@ -6,6 +6,9 @@ import numpy as np
 def make_dense_mat(row, col, dtype):
     return np.random.rand(row, col).astype(dtype)
 
+def make_zero_mat(row, col, dtype):
+    return np.zeros(row * col).reshape(row, col).astype(dtype)
+
 
 def make_sparse_mat(row, col, dtype):
     a = np.random.rand(row, col).astype(dtype)
@@ -26,7 +29,7 @@ if __name__ == '__main__':
     n = 8
     mat_a = make_sparse_mat(m, k, 'float16')
     mat_b = make_dense_mat(k, n, 'float16')
-    mat_c = make_dense_mat(m, n, 'float16')
+    mat_c = make_zero_mat(m, n, 'float16')
     mat_a.tofile('a.bin')
     mat_b.tofile('b.bin')
     mat_c.tofile('c.bin')
