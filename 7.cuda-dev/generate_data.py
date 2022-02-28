@@ -14,13 +14,17 @@ def make_zero_mat(row, col, dtype):
 def make_sparse_mat(row, col, dtype):
     a = np.random.rand(row, col).astype(dtype)
     for i in range(row):
-        for j in range(col // 4):
+        for j in col // 4:
             i1 = random.randint(0, 3)
             i2 = random.randint(0, 3)
             while i2 == i1:
                 i2 = random.randint(0, 3)
             a[i, j * 4 + i1] = 0
             a[i, j * 4 + i2] = 0
+        # 防止像k = 11这种情况时导致A矩阵不够sparse
+        if col % 4 > 1:
+            i1 = random.randint(0, col % 4 - 1)
+            a[i, col - col % 4 + i1] = 0
     return a
 
 
