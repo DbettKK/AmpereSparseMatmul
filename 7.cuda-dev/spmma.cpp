@@ -424,7 +424,7 @@ void rand(__half *item, int m, int n) {
 }
 
 int main() {
-    int m = 16, k = 16, n = 8;
+    int m = 15, k = 14, n = 7;
     __half **array = read_bin(m, n, k);
 //    __half *hA = (__half *)malloc(m * k * sizeof(__half));
 //    __half *hB = (__half *)malloc(k * n * sizeof(__half));
@@ -434,8 +434,8 @@ int main() {
 //    memset(hC, 0, m * n * sizeof(__half));
     //rand(hC, m, n);
     __half *hA = array[0];
-    __half *hB = array[0];
-    __half *hC = array[0];
+    __half *hB = array[1];
+    __half *hC = array[2];
     print_matrix(hA, m, k);
     cout << endl;
     print_matrix(hB, k, n);
