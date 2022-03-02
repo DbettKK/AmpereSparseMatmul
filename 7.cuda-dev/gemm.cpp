@@ -73,11 +73,11 @@ int main(int argc, char *argv[]) {
      *       | 7.0 | 8.0 |
      */
 
-    const vector<data_type> A;
+    vector<data_type> A;
     for (int i = 0; i < m * k; i++) {
         A.push_back(matrices[0][i]);
     }
-    const vector<data_type> B;
+    vector<data_type> B;
     for (int i = 0; i < n * k; i++) {
         B.push_back(matrices[1][i]);
     }
