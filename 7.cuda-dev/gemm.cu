@@ -11,7 +11,7 @@ using data_type = float;
 
 
 float **read_bin(int m, int n, int k) {
-    float **ret = (__half **)malloc(sizeof(float *) * 3);
+    float **ret = (float **)malloc(sizeof(float *) * 3);
     __half *mat_a_host = new __half[m * k];
     __half *mat_b_host = new __half[k * n];
     __half *mat_c_host = new __half[m * n];
