@@ -14,7 +14,7 @@ def make_zero_mat(row, col, dtype):
 def make_sparse_mat(row, col, dtype):
     a = np.random.rand(row, col).astype(dtype)
     for i in range(row):
-        for j in col // 4:
+        for j in range(col // 4):
             i1 = random.randint(0, 3)
             i2 = random.randint(0, 3)
             while i2 == i1:
