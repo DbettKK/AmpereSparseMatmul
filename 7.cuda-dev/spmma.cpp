@@ -424,7 +424,7 @@ void rand(__half *item, int m, int n) {
 }
 
 int main() {
-    int m = 512, k = 512, n = 512;
+    int m = 16, k = 16, n = 8;
     __half **array = read_bin(m, n, k);
 //    __half *hA = (__half *)malloc(m * k * sizeof(__half));
 //    __half *hB = (__half *)malloc(k * n * sizeof(__half));
