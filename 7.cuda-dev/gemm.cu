@@ -7,6 +7,13 @@
 
 #include "cublas_utils.h"
 
+#include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+#include<cusparseLt.h>       // cusparseLt header
+#include<cstdint>
+#include<cstring>
+#include<fstream>
+#include<iostream>
+
 using namespace std;
 
 using data_type = float;
