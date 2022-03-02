@@ -16,11 +16,11 @@
 
 using namespace std;
 
-using data_type = float;
+using data_type = double;
 
 
-float **read_bin(int m, int n, int k) {
-    float **ret = (float **)malloc(sizeof(float *) * 3);
+double **read_bin(int m, int n, int k) {
+    double **ret = (double **)malloc(sizeof(double *) * 3);
     __half *mat_a_host = new __half[m * k];
     __half *mat_b_host = new __half[k * n];
     __half *mat_c_host = new __half[m * n];
@@ -31,17 +31,17 @@ float **read_bin(int m, int n, int k) {
     ifstream c_fs("c.bin", ios_base::binary);
     c_fs.read((char *)mat_c_host, m * n * sizeof(__half));
 
-    float *a_float = new float[m * k];
-    float *b_float = new float[k * n];
-    float *c_float = new float[m * n];
+    double *a_float = new double[m * k];
+    double *b_float = new double[k * n];
+    double *c_float = new double[m * n];
     for (int i = 0; i < m * k; i++) {
-        a_float[i] = static_cast<float>(mat_a_host[i]);
+        a_float[i] = static_cast<double>(mat_a_host[i]);
     }
     for (int i = 0; i < n * k; i++) {
-        b_float[i] = static_cast<float>(mat_b_host[i]);
+        b_float[i] = static_cast<double>(mat_b_host[i]);
     }
     for (int i = 0; i < m * n; i++) {
-        c_float[i] = static_cast<float>(mat_c_host[i]);
+        c_float[i] = static_cast<double>(mat_c_host[i]);
     }
     ret[0] = a_float;
     ret[1] = b_float;
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     const int ldb = n;
     const int ldc = n;
 
-    float **matrices = read_bin(m, n, k);
+    double **matrices = read_bin(m, n, k);
 
 
 
