@@ -35,13 +35,13 @@ double **read_bin(int m, int n, int k) {
     double *b_float = new double[k * n];
     double *c_float = new double[m * n];
     for (int i = 0; i < m * k; i++) {
-        a_float[i] = static_cast<double>(static_cast<float>(mat_a_host[i]));
+        a_float[i] = static_cast<double>(mat_a_host[i]);
     }
     for (int i = 0; i < n * k; i++) {
-        b_float[i] = static_cast<double>(static_cast<float>(mat_b_host[i]));
+        b_float[i] = static_cast<double>(mat_b_host[i]);
     }
     for (int i = 0; i < m * n; i++) {
-        c_float[i] = static_cast<double>(static_cast<float>(mat_c_host[i]));
+        c_float[i] = static_cast<double>(mat_c_host[i]);
     }
     ret[0] = a_float;
     ret[1] = b_float;
@@ -57,9 +57,9 @@ int main(int argc, char *argv[]) {
     const int m = 16;
     const int n = 8;
     const int k = 16;
-    const int lda = k;
-    const int ldb = n;
-    const int ldc = n;
+    const int lda = m;
+    const int ldb = k;
+    const int ldc = m;
 
     double **matrices = read_bin(m, n, k);
 
