@@ -13,6 +13,9 @@ def gen_4in2_metadata():
     metadata.sort()
     return metadata
 
+def make_zero_mat(row, col):
+    return np.zeros(row * col).reshape(row, col).astype('float16')
+
 
 def make_sparse_metadata(row, col):
     metadata_col = col // 4
@@ -83,7 +86,8 @@ if __name__ == '__main__':
     # 随机的 16 * 8 的矩阵
     mat_b = make_dense_mat(K, N)
     # 随机的 16 * 8 的矩阵
-    mat_c = make_dense_mat(M, N)
+    mat_c = make_zero_mat(M, N)
+    print(mat_c)
     # d = a * b + c
     mat_d = np.matmul(mat_a, mat_b) + mat_c
 
