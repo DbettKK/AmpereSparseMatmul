@@ -378,10 +378,10 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(hD, dD, C_size, cudaMemcpyDeviceToHost) )
     cout << "A_compress: " << endl;
-    print_matrix(hA, m, n);
+    //print_matrix(hA, m, n);
     cout<<" CPU: "<<endl;
     __half *cpu = gemm_cpu(hA, hB, m, n, k);
-    print_matrix(cpu, m, n);
+    //print_matrix(cpu, m, n);
     cmp_cpu_gpu(hC, cpu, m, n);
 }
 
@@ -412,7 +412,7 @@ void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
 
     __half *output = handle_output(hD, m, m_pad, n, n_pad);
     cout << "GPU D: " << endl;
-    print_matrix(output, m, n);
+    //print_matrix(output, m, n);
 }
 
 void rand(__half *item, int m, int n) {
