@@ -334,7 +334,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune the A matrix (in-place) and check the correcteness
-    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
     // 这一步可以省略 ↑
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
     int is_valid;
@@ -424,7 +424,7 @@ void rand(__half *item, int m, int n) {
 }
 
 int main() {
-    int m = 16, k = 16, n = 8;
+    int m = 256, k = 256, n = 256;
     __half **array = read_bin(m, n, k);
 //    __half *hA = (__half *)malloc(m * k * sizeof(__half));
 //    __half *hB = (__half *)malloc(k * n * sizeof(__half));

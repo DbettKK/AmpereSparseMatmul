@@ -54,9 +54,9 @@ int main(int argc, char *argv[]) {
     cublasHandle_t cublasH = NULL;
     cudaStream_t stream = NULL;
 
-    const int m = 16;
-    const int n = 8;
-    const int k = 16;
+    const int m = 256;
+    const int n = 256;
+    const int k = 256;
     const int lda = m;
     const int ldb = k;
     const int ldc = m;

@@ -29,9 +29,9 @@ def make_sparse_mat(row, col, dtype):
 
 
 if __name__ == '__main__':
-    m = 16
-    k = 16
-    n = 8
+    m = 256
+    k = 256
+    n = 256
     mat_a = make_sparse_mat(m, k, 'float16')
     mat_b = make_dense_mat(k, n, 'float16')
     mat_c = make_zero_mat(m, n, 'float16')
