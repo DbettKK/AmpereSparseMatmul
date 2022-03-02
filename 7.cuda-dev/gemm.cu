@@ -7,6 +7,8 @@
 
 #include "cublas_utils.h"
 
+using namespace std;
+
 using data_type = float;
 
 
