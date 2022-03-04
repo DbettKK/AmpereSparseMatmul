@@ -44,7 +44,7 @@ int main() {
     print_tensor(input, 1, 1, 16, 16);
     // cudnn
     cudnnTensorDescriptor_t input_descriptor;
-    cudnnCreateTensorDescriptor(&input_descriptor);
+    CHECK_CUDNN(cudnnCreateTensorDescriptor(&input_descriptor))
     CHECK_CUDNN(cudnnSetTensor4dDescriptor(input_descriptor,
                                CUDNN_TENSOR_NHWC,
                                CUDNN_DATA_FLOAT,
@@ -53,7 +53,7 @@ int main() {
 
     // output
     cudnnTensorDescriptor_t output_descriptor;
-    cudnnCreateTensorDescriptor(&output_descriptor);
+    CHECK_CUDNN(cudnnCreateTensorDescriptor(&output_descriptor))
     CHECK_CUDNN(cudnnSetTensor4dDescriptor(output_descriptor,
                                CUDNN_TENSOR_NHWC,
                                CUDNN_DATA_FLOAT,
@@ -69,7 +69,7 @@ int main() {
     cout << "kernel: " << endl;
     print_tensor(kernel, 1, 1, 3, 3);
     cudnnFilterDescriptor_t kernel_descriptor;
-    cudnnCreateFilterDescriptor(&kernel_descriptor);
+    CHECK_CUDNN(cudnnCreateFilterDescriptor(&kernel_descriptor))
     CHECK_CUDNN( cudnnSetFilter4dDescriptor(kernel_descriptor,
                                CUDNN_DATA_FLOAT,
                                CUDNN_TENSOR_NCHW,
@@ -77,7 +77,7 @@ int main() {
                                //kernel.shape(0), kernel.shape(1), kernel.shape(2), kernel.shape(3));
     // convolution descriptor
     cudnnConvolutionDescriptor_t conv_descriptor;
-    cudnnCreateConvolutionDescriptor(&conv_descriptor);
+    CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&conv_descriptor))
     CHECK_CUDNN(cudnnSetConvolution2dDescriptor(conv_descriptor,
                                     1, 1, // zero-padding
                                     1, 1, // stride
