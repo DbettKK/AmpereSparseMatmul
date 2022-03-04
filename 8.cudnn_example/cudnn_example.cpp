@@ -3,6 +3,16 @@
 
 using namespace std;
 
+#define CHECK_CUDNN(func)                                                       \
+{                                                                              \
+    cudnnStatus_t status = (func);                                               \
+    if (status != CUDNN_STATUS_SUCCESS) {                                               \
+        printf("CUDNN failed at line %d with error: %s (%d)\n",             \
+               __LINE__, cudnnGetErrorString(status), status);                  \
+        return 0;                                                   \
+    }                                                                          \
+}
+
 void print_tensor(float *item, int n, int c, int w, int h) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < c; j++) {
@@ -35,19 +45,19 @@ int main() {
     // cudnn
     cudnnTensorDescriptor_t input_descriptor;
     cudnnCreateTensorDescriptor(&input_descriptor);
-    cudnnSetTensor4dDescriptor(input_descriptor,
+    CHECK_CUDNN(cudnnSetTensor4dDescriptor(input_descriptor,
                                CUDNN_TENSOR_NHWC,
                                CUDNN_DATA_FLOAT,
-                               1, 1, 16, 16); // n, c, w, h <int>
+                               1, 1, 16, 16)) // n, c, w, h <int>
                                //input.shape(0), input.shape(1), input.shape(2), input.shape(3));
 
     // output
     cudnnTensorDescriptor_t output_descriptor;
     cudnnCreateTensorDescriptor(&output_descriptor);
-    cudnnSetTensor4dDescriptor(output_descriptor,
+    CHECK_CUDNN(cudnnSetTensor4dDescriptor(output_descriptor,
                                CUDNN_TENSOR_NHWC,
                                CUDNN_DATA_FLOAT,
-                               1, 1, 14, 14);
+                               1, 1, 14, 14))
                                // output.shape(0), output.shape(1), output.shape(2), output.shape(3));
 
     // kernel <12, 1, 3, 3>
@@ -60,32 +70,32 @@ int main() {
     print_tensor(kernel, 1, 1, 3, 3);
     cudnnFilterDescriptor_t kernel_descriptor;
     cudnnCreateFilterDescriptor(&kernel_descriptor);
-    cudnnSetFilter4dDescriptor(kernel_descriptor,
+    CHECK_CUDNN( cudnnSetFilter4dDescriptor(kernel_descriptor,
                                CUDNN_DATA_FLOAT,
                                CUDNN_TENSOR_NCHW,
-                               1, 1, 3, 3);
+                               1, 1, 3, 3))
                                //kernel.shape(0), kernel.shape(1), kernel.shape(2), kernel.shape(3));
     // convolution descriptor
     cudnnConvolutionDescriptor_t conv_descriptor;
     cudnnCreateConvolutionDescriptor(&conv_descriptor);
-    cudnnSetConvolution2dDescriptor(conv_descriptor,
+    CHECK_CUDNN(cudnnSetConvolution2dDescriptor(conv_descriptor,
                                     0, 0, // zero-padding
                                     0, 0, // stride
                                     0, 0, // dilation 卷积核膨胀 膨胀后用0填充空位
                                     // 卷积是需要将卷积核旋转180°再进行后续的 -> CUDNN_CONVOLUTION
-                                    CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT);
+                                    CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT))
 
     // algorithm
     cudnnConvolutionFwdAlgoPerf_t algo_perf[8];
     int ret;
-    cudnnFindConvolutionForwardAlgorithm(handle,
+    CHECK_CUDNN(cudnnFindConvolutionForwardAlgorithm(handle,
                                         input_descriptor,
                                         kernel_descriptor,
                                         conv_descriptor,
                                         output_descriptor,
                                         8,
                                         &ret,
-                                        algo_perf);
+                                        algo_perf))
 
     cout << ret << endl;
     cudnnConvolutionFwdAlgo_t algo;
