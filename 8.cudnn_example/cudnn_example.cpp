@@ -79,9 +79,9 @@ int main() {
     cudnnConvolutionDescriptor_t conv_descriptor;
     cudnnCreateConvolutionDescriptor(&conv_descriptor);
     CHECK_CUDNN(cudnnSetConvolution2dDescriptor(conv_descriptor,
-                                    0, 0, // zero-padding
+                                    1, 1, // zero-padding
                                     1, 1, // stride
-                                    0, 0, // dilation 卷积核膨胀 膨胀后用0填充空位
+                                    1, 1, // dilation 卷积核膨胀 膨胀后用0填充空位
                                     // 卷积是需要将卷积核旋转180°再进行后续的 -> CUDNN_CONVOLUTION
                                     CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT))
 
