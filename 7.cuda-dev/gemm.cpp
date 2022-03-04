@@ -1,18 +1,17 @@
-#include <cstdio>
-#include <cstdlib>
-#include <vector>
-
-#include <cublas_v2.h>
-#include <cuda_runtime.h>
-
-#include "cublas_utils.h"
-
-#include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-#include<cusparseLt.h>       // cusparseLt header
+#include<cstdio>
+#include<cstdlib>
 #include<cstdint>
 #include<cstring>
+
 #include<fstream>
 #include<iostream>
+#include<vector>
+
+#include<cublas_v2.h>
+#include<cuda_runtime.h>
+#include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+
+#include "cublas_utils.h"
 
 using namespace std;
 

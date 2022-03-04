@@ -93,3 +93,4 @@ ko, ki = s[C].split(k, factor=4)
 s[C].reorder(xo, yo, ko, ki, xi, yi)
 
 evaluate_operation(s, [A, B, C], target=target, name="mmult", optimization="blocking", log=log)
+
