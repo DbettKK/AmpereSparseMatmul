@@ -47,7 +47,7 @@ int main() {
     cudnnSetTensor4dDescriptor(output_descriptor,
                                CUDNN_TENSOR_NHWC,
                                CUDNN_DATA_FLOAT,
-                               1, 12, 14, 14);
+                               1, 1, 14, 14);
                                // output.shape(0), output.shape(1), output.shape(2), output.shape(3));
 
     // kernel <12, 1, 3, 3>
@@ -57,13 +57,13 @@ int main() {
         else kernel[i] = rand() % 5;
     }
     cout << "kernel: " << endl;
-    print_tensor(kernel, 12, 1, 3, 3);
+    print_tensor(kernel, 1, 1, 3, 3);
     cudnnFilterDescriptor_t kernel_descriptor;
     cudnnCreateFilterDescriptor(&kernel_descriptor);
     cudnnSetFilter4dDescriptor(kernel_descriptor,
                                CUDNN_DATA_FLOAT,
                                CUDNN_TENSOR_NCHW,
-                               1, 12, 3, 3);
+                               1, 1, 3, 3);
                                //kernel.shape(0), kernel.shape(1), kernel.shape(2), kernel.shape(3));
     // convolution descriptor
     cudnnConvolutionDescriptor_t conv_descriptor;
