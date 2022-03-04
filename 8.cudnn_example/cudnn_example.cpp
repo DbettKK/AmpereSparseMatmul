@@ -26,7 +26,7 @@ int main() {
 
     // input
     float *input = new float[1 * 1 * 16 * 16];
-    float *output = new float[12 * 1 * 14 * 14];
+    float *output = new float[1 * 1 * 14 * 14];
     for (int i = 0; i < 256; i++) {
         input[i] = rand() % 8;
     }
@@ -51,8 +51,8 @@ int main() {
                                // output.shape(0), output.shape(1), output.shape(2), output.shape(3));
 
     // kernel <12, 1, 3, 3>
-    float *kernel = new float[12 * 1 * 3 * 3];
-    for (int i = 0; i < 12 * 9; i++) {
+    float *kernel = new float[1 * 1 * 3 * 3];
+    for (int i = 0; i < 1 * 9; i++) {
         if (i % 2) kernel[i] = 0;
         else kernel[i] = rand() % 5;
     }
@@ -76,14 +76,14 @@ int main() {
                                     CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT);
 
     // algorithm
-    cudnnConvolutionFwdAlgoPerf_t algo_perf[4];
+    cudnnConvolutionFwdAlgoPerf_t algo_perf[8];
     int ret;
     cudnnFindConvolutionForwardAlgorithm(handle,
                                         input_descriptor,
                                         kernel_descriptor,
                                         conv_descriptor,
                                         output_descriptor,
-                                        4,
+                                        8,
                                         &ret,
                                         algo_perf);
 
