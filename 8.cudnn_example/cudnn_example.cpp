@@ -101,7 +101,7 @@ int main() {
     cudnnConvolutionFwdAlgo_t algo;
     bool flag = false;
     for (int i = 0; i < ret; i++) {
-        cout << algo_perf[i].status << ", ";
+        cout << cudnnGetErrorString(algo_perf[i].status) << ", ";
         if (algo_perf[i].status == CUDNN_STATUS_SUCCESS) {
             algo = algo_perf[i].algo;
             flag = true;
