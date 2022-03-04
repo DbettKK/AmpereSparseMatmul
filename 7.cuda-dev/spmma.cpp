@@ -52,12 +52,13 @@ int check_gpu() {
 }
 
 void print_matrix(__half *item, int row, int col) {
-    for (int i = 0; i < row; i++) {
-        for (int j = 0; j < col; j++) {
-            cout << item[i * col + j] << " ";
-        }
-        cout << endl;
-    }
+    cout << endl;
+//    for (int i = 0; i < row; i++) {
+//        for (int j = 0; j < col; j++) {
+//            cout << item[i * col + j] << " ";
+//        }
+//        cout << endl;
+//    }
 }
 
 __half *gemm_cpu(__half *A, __half *B, int m, int n, int k) {
