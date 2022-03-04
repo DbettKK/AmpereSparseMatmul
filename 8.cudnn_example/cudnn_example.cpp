@@ -32,7 +32,7 @@ void print_tensor(float *item, int n, int c, int w, int h) {
 int main() {
     //handle
     cudnnHandle_t handle;
-    cudnnCreate(&handle);
+    CHECK_CUDNN(cudnnCreate(&handle))
 
     // input
     float *input = new float[1 * 1 * 16 * 16];
