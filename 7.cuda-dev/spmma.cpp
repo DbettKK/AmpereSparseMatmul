@@ -264,19 +264,32 @@ void tile(__half *item, int row, int col) {
 }
 
 __half **read_bin(int m, int n, int k) {
+    // read 为float32 转为flat16
     __half **ret = (__half **)malloc(sizeof(__half *) * 3);
-    __half *mat_a_host = new __half[m * k];
-    __half *mat_b_host = new __half[k * n];
-    __half *mat_c_host = new __half[m * n];
+    float *a = new float[m * k];
+    float *b = new float[k * n];
+    float *c = new float[m * n];
     ifstream a_fs("a.bin", ios_base::binary);
-    a_fs.read((char *)mat_a_host, m * k * sizeof(__half));
+    a_fs.read((char *)a, m * k * sizeof(float));
     ifstream b_fs("b.bin", ios_base::binary);
-    b_fs.read((char *)mat_b_host, k * n * sizeof(__half));
+    b_fs.read((char *)b, k * n * sizeof(float));
     ifstream c_fs("c.bin", ios_base::binary);
-    c_fs.read((char *)mat_c_host, m * n * sizeof(__half));
-    ret[0] = mat_a_host;
-    ret[1] = mat_b_host;
-    ret[2] = mat_c_host;
+    c_fs.read((char *)c, m * n * sizeof(float));
+    __half *ret_a = new __half[m * k];
+    __half *ret_b = new __half[k * n];
+    __half *ret_c = new __half[m * n];
+    for (int i = 0; i < m * k; i++) {
+        ret_a[i] = static_cast<__half>(a[i]);
+    }
+    for (int i = 0; i < n * k; i++) {
+        ret_b[i] = static_cast<__half>(b[i]);
+    }
+    for (int i = 0; i < m * n; i++) {
+        ret_c[i] = static_cast<__half>(c[i]);
+    }
+    ret[0] = ret_a;
+    ret[1] = ret_b;
+    ret[2] = ret_c;
     return ret;
 }
 

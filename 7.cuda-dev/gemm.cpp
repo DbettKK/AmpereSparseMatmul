@@ -58,18 +58,6 @@ data_type **read_bin(int m, int n, int k) {
     ifstream c_fs("c.bin", ios_base::binary);
     c_fs.read((char *)mat_c_host, m * n * sizeof(data_type));
 
-//    double *a_float = new double[m * k];
-//    double *b_float = new double[k * n];
-//    double *c_float = new double[m * n];
-//    for (int i = 0; i < m * k; i++) {
-//        a_float[i] = static_cast<double>(mat_a_host[i]);
-//    }
-//    for (int i = 0; i < n * k; i++) {
-//        b_float[i] = static_cast<double>(mat_b_host[i]);
-//    }
-//    for (int i = 0; i < m * n; i++) {
-//        c_float[i] = static_cast<double>(mat_c_host[i]);
-//    }
     ret[0] = mat_a_host;
     ret[1] = mat_b_host;
     ret[2] = mat_c_host;
@@ -84,12 +72,13 @@ int main(int argc, char *argv[]) {
     const int m = 16;
     const int n = 12;
     const int k = 16;
-    const int lda = m;
+    const int lda = m; // 因为是列存储 因此ld代表行数
     const int ldb = k;
     const int ldc = m;
 
     data_type **matrices = read_bin(m, n, k);
 
+    // 因为cublas的存储和普通的存在差别 因此需要进行一次倒换
     vector<data_type> A;
     int tmpA[k][m] = {};
     for (int i = 0; i < m; i++) {
@@ -143,45 +132,41 @@ int main(int argc, char *argv[]) {
     printf("=====\n");
 
     /* step 1: create cublas handle, bind a stream */
-    CUBLAS_CHECK(cublasCreate(&cublasH));
+    CUBLAS_CHECK( cublasCreate(&cublasH) );
 
-    CUDA_CHECK(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking));
-    CUBLAS_CHECK(cublasSetStream(cublasH, stream));
+    CUDA_CHECK( cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) );
+    CUBLAS_CHECK( cublasSetStream(cublasH, stream) );
 
     /* step 2: copy data to device */
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&d_A), sizeof(data_type) * A.size()));
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&d_B), sizeof(data_type) * B.size()));
-    CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&d_C), sizeof(data_type) * C.size()));
+    CUDA_CHECK( cudaMalloc(reinterpret_cast<void **>(&d_A), sizeof(data_type) * A.size()) );
+    CUDA_CHECK( cudaMalloc(reinterpret_cast<void **>(&d_B), sizeof(data_type) * B.size()) );
+    CUDA_CHECK( cudaMalloc(reinterpret_cast<void **>(&d_C), sizeof(data_type) * C.size()) );
 
-    CUDA_CHECK(cudaMemcpyAsync(d_A, A.data(), sizeof(data_type) * A.size(), cudaMemcpyHostToDevice,
-                               stream));
-    CUDA_CHECK(cudaMemcpyAsync(d_B, B.data(), sizeof(data_type) * B.size(), cudaMemcpyHostToDevice,
-                               stream));
+    CUDA_CHECK( cudaMemcpyAsync(d_A, A.data(), sizeof(data_type) * A.size(), cudaMemcpyHostToDevice, stream) );
+    CUDA_CHECK( cudaMemcpyAsync(d_B, B.data(), sizeof(data_type) * B.size(), cudaMemcpyHostToDevice, stream) );
 
     /* step 3: compute */
-    CUBLAS_CHECK(
-        cublasSgemm(cublasH, transa, transb, m, n, k, &alpha, d_A, lda, d_B, ldb, &beta, d_C, ldc));
+    CUBLAS_CHECK( cublasSgemm(cublasH, transa, transb, m, n, k, &alpha, d_A, lda, d_B, ldb, &beta, d_C, ldc) );
 
     /* step 4: copy data to host */
-    CUDA_CHECK(cudaMemcpyAsync(C.data(), d_C, sizeof(data_type) * C.size(), cudaMemcpyDeviceToHost,
-                               stream));
+    CUDA_CHECK( cudaMemcpyAsync(C.data(), d_C, sizeof(data_type) * C.size(), cudaMemcpyDeviceToHost, stream));
 
-    CUDA_CHECK(cudaStreamSynchronize(stream));
+    CUDA_CHECK( cudaStreamSynchronize(stream) );
 
     printf("C\n");
     print_matrix(m, n, C.data(), ldc);
     printf("=====\n");
 
     /* free resources */
-    CUDA_CHECK(cudaFree(d_A));
-    CUDA_CHECK(cudaFree(d_B));
-    CUDA_CHECK(cudaFree(d_C));
+    CUDA_CHECK( cudaFree(d_A) );
+    CUDA_CHECK( cudaFree(d_B) );
+    CUDA_CHECK( cudaFree(d_C) );
 
-    CUBLAS_CHECK(cublasDestroy(cublasH));
+    CUBLAS_CHECK( cublasDestroy(cublasH) );
 
-    CUDA_CHECK(cudaStreamDestroy(stream));
+    CUDA_CHECK( cudaStreamDestroy(stream) );
 
-    CUDA_CHECK(cudaDeviceReset());
+    CUDA_CHECK( cudaDeviceReset() );
 
     return EXIT_SUCCESS;
 }

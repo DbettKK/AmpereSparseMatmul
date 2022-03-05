@@ -1,5 +1,4 @@
 import random
-import sys
 
 import numpy as np
 
@@ -29,8 +28,8 @@ def make_sparse_mat(row, col, dtype):
     return a
 
 
-def make_tensor(n, c, w, h, dtype):
-    return np.random.randint(0, 5, (n, c, w, h)).astype('float32')
+def make_tensor(n, c, w, h, _dtype):
+    return np.random.randint(0, 5, (n, c, w, h)).astype(_dtype)
 
 
 def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0):
@@ -73,9 +72,10 @@ if __name__ == '__main__':
     kernel_n, kernel_c, kernel_w, kernel_h = 12, 1, 4, 4
     padding = 1
     stride = 1
+    dtype = 'float32'
 
-    data = make_tensor(data_n, data_c, data_w, data_h)
-    kernel = make_tensor(kernel_n, kernel_c, kernel_w, kernel_h)
+    data = make_tensor(data_n, data_c, data_w, data_h, dtype)
+    kernel = make_tensor(kernel_n, kernel_c, kernel_w, kernel_h, dtype)
 
     data_trans = im2col(data, kernel_h, kernel_w, stride, padding)
     data_trans_w, data_trans_h = data_trans.shape
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     print(data_trans)
     print(kernel_trans)
 
-    zero_matrix = make_zero_mat(m, n, 'int32')
+    zero_matrix = make_zero_mat(m, n, dtype)
 
     # to bin_file
     data.tofile('data.bin')
