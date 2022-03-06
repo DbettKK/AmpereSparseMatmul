@@ -32,10 +32,11 @@ def make_tensor(n, c, w, h, _dtype):
     return np.random.randint(0, 5, (n, c, w, h)).astype(_dtype)
 
 
-def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0):
+def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0, _dtype='float32'):
     """
     Parameters
     ----------
+    _dtype
     input_data : 由(数据量, 通道, 高, 长)的4维数组构成的输入数据
     filter_h : 滤波器的高
     filter_w : 滤波器的长
@@ -51,7 +52,7 @@ def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0):
     out_w = (W + 2 * pad - filter_w) // stride + 1  # 输出矩阵的宽
 
     img = np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], 'constant')
-    col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
+    col = np.zeros((N, C, filter_h, filter_w, out_h, out_w)).astype(_dtype)
 
     for y in range(filter_h):
         y_max = y + stride * out_h
@@ -77,7 +78,7 @@ if __name__ == '__main__':
     data = make_tensor(data_n, data_c, data_w, data_h, dtype)
     kernel = make_tensor(kernel_n, kernel_c, kernel_w, kernel_h, dtype)
 
-    data_trans = im2col(data, kernel_h, kernel_w, stride, padding)
+    data_trans = im2col(data, kernel_h, kernel_w, stride, padding, dtype)
     data_trans_w, data_trans_h = data_trans.shape
     kernel_trans = kernel_im2col(kernel, kernel_n, kernel_c, kernel_w, kernel_h)
 

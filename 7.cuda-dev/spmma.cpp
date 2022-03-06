@@ -8,36 +8,36 @@
 #include<fstream>
 #include<iostream>
 
+#include"cuda_utils.h"
+
 using namespace std;
 
-// spmma: 16x16 16x8 -> 16x8 m16n8k16
+int check_gpu();
+void cmp_cpu_gpu(__half *gpu, __half *cpu, int m, int n);
+Matrix *padding_struct(Matrix *matrix, int flag);   // m->8 n->8 k->16
+__half *handle_output(__half *item, int m, int m_pad, int n, int n_pad);    // 将之前padding的进行还原
+int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int k); // hc hd都为输出
+void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k);   // 暴露的接口
+__half **convert(float **array, int m, int n, int k);
 
-#define CHECK_CUDA(func)                                                       \
-{                                                                              \
-    cudaError_t status = (func);                                               \
-    if (status != cudaSuccess) {                                               \
-        printf("CUDA API failed at line %d with error: %s (%d)\n",             \
-               __LINE__, cudaGetErrorString(status), status);                  \
-        return EXIT_FAILURE;                                                   \
-    }                                                                          \
+
+int main() {
+    int m = m_global, k = k_global, n = n_global;
+    __half **array = convert(read_bin(m, n, k), m, n, k);
+    __half *hA = array[0];
+    __half *hB = array[1];
+    __half *hC = array[2];
+    cout << "A:" << endl;
+    print_matrix(hA, m, k);
+    cout << endl;
+    cout << "B:" << endl;
+    print_matrix(hB, k, n);
+    cout << endl;
+    cout << "C:" << endl;
+    print_matrix(hC, m, n);
+    cout << endl;
+    expose(hA, hB, hC, m, n, k);
 }
-
-#define CHECK_CUSPARSE(func)                                                   \
-{                                                                              \
-    cusparseStatus_t status = (func);                                          \
-    if (status != CUSPARSE_STATUS_SUCCESS) {                                   \
-        printf("CUSPARSE API failed at line %d with error: %s (%d)\n",         \
-               __LINE__, cusparseGetErrorString(status), status);              \
-        return EXIT_FAILURE;                                                   \
-    }                                                                          \
-}
-
-struct Matrix {
-    __half *item;
-    int row, col;
-};
-
-constexpr int EXIT_UNSUPPORTED = 2;
 
 int check_gpu() {
     // 检查GPU是否支持cuSparseLt
@@ -49,34 +49,6 @@ int check_gpu() {
                      major_cc, minor_cc);
         return EXIT_UNSUPPORTED;
     }
-}
-
-void print_matrix(__half *item, int row, int col) {
-    cout << endl;
-//    for (int i = 0; i < row; i++) {
-//        for (int j = 0; j < col; j++) {
-//            cout << item[i * col + j] << " ";
-//        }
-//        cout << endl;
-//    }
-}
-
-__half *gemm_cpu(__half *A, __half *B, int m, int n, int k) {
-    __half *ret = (__half *)malloc(sizeof(__half) * m * n);
-    memset(ret, 0, sizeof(m * n));
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-            float sum  = 0.0f;
-            for (int v = 0; v < k; v++) {
-                int posA =  i * k + v; // A[i][v]
-                int posB =  v * n + j; // B[v][j]
-                sum += static_cast<float>(A[posA]) * static_cast<float>(B[posB]);
-            }
-            int posRet = i * n + j;
-            ret[posRet] = sum;  // [i][j]
-        }
-    }
-    return ret;
 }
 
 void cmp_cpu_gpu(__half *gpu, __half *cpu, int m, int n) {
@@ -94,7 +66,26 @@ void cmp_cpu_gpu(__half *gpu, __half *cpu, int m, int n) {
     printf("diff: %d\n", cnt);
 }
 
-// m->8 n->8 k->16
+__half **convert(float **array, int m, int n, int k) {
+    __half **ret = (__half **)malloc(sizeof(__half *) * 3);
+    __half *ret_a = new __half[m * k];
+    __half *ret_b = new __half[k * n];
+    __half *ret_c = new __half[m * n];
+    for (int i = 0; i < m * k; i++) {
+        ret_a[i] = static_cast<__half>(array[0][i]);
+    }
+    for (int i = 0; i < n * k; i++) {
+        ret_b[i] = static_cast<__half>(array[1][i]);
+    }
+    for (int i = 0; i < m * n; i++) {
+        ret_c[i] = static_cast<__half>(array[2][i]);
+    }
+    ret[0] = ret_a;
+    ret[1] = ret_b;
+    ret[2] = ret_c;
+    return ret;
+}
+
 Matrix *padding_struct(Matrix *matrix, int flag) {
     Matrix *out = (Matrix *)malloc(sizeof(Matrix));
     int row = matrix->row, col = matrix->col;
@@ -244,7 +235,6 @@ Matrix *padding_struct(Matrix *matrix, int flag) {
     }
 }
 
-// 将之前padding的进行还原
 __half *handle_output(__half *item, int m, int m_pad, int n, int n_pad) {
     if (m_pad == m && n_pad == n) {
         return item;
@@ -258,42 +248,6 @@ __half *handle_output(__half *item, int m, int m_pad, int n, int n_pad) {
     return ret;
 }
 
-// 在整体较大时 需要进行tile
-void tile(__half *item, int row, int col) {
-
-}
-
-__half **read_bin(int m, int n, int k) {
-    // read 为float32 转为flat16
-    __half **ret = (__half **)malloc(sizeof(__half *) * 3);
-    float *a = new float[m * k];
-    float *b = new float[k * n];
-    float *c = new float[m * n];
-    ifstream a_fs("a.bin", ios_base::binary);
-    a_fs.read((char *)a, m * k * sizeof(float));
-    ifstream b_fs("b.bin", ios_base::binary);
-    b_fs.read((char *)b, k * n * sizeof(float));
-    ifstream c_fs("c.bin", ios_base::binary);
-    c_fs.read((char *)c, m * n * sizeof(float));
-    __half *ret_a = new __half[m * k];
-    __half *ret_b = new __half[k * n];
-    __half *ret_c = new __half[m * n];
-    for (int i = 0; i < m * k; i++) {
-        ret_a[i] = static_cast<__half>(a[i]);
-    }
-    for (int i = 0; i < n * k; i++) {
-        ret_b[i] = static_cast<__half>(b[i]);
-    }
-    for (int i = 0; i < m * n; i++) {
-        ret_c[i] = static_cast<__half>(c[i]);
-    }
-    ret[0] = ret_a;
-    ret[1] = ret_b;
-    ret[2] = ret_c;
-    return ret;
-}
-
-// hc hd都为输出
 int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int k) {
     int A_size = m * k * sizeof(__half);
     int B_size = k * n * sizeof(__half);
@@ -427,37 +381,4 @@ void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     __half *output = handle_output(hD, m, m_pad, n, n_pad);
     cout << "GPU D: " << endl;
     //print_matrix(output, m, n);
-}
-
-void rand(__half *item, int m, int n) {
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-            item[i * n + j] = static_cast<__half>(static_cast<float>(rand() % 8));
-        }
-    }
-}
-
-int main() {
-    int m = 1024, k = 1024, n = 1024;
-    __half **array = read_bin(m, n, k);
-//    __half *hA = (__half *)malloc(m * k * sizeof(__half));
-//    __half *hB = (__half *)malloc(k * n * sizeof(__half));
-//    __half *hC = (__half *)malloc(m * n * sizeof(__half));
-//    rand(hA, m, k);
-//    rand(hB, k, n);
-//    memset(hC, 0, m * n * sizeof(__half));
-    //rand(hC, m, n);
-    __half *hA = array[0];
-    __half *hB = array[1];
-    __half *hC = array[2];
-    cout << "A:" << endl;
-    print_matrix(hA, m, k);
-    cout << endl;
-    cout << "B:" << endl;
-    print_matrix(hB, k, n);
-    cout << endl;
-    cout << "C:" << endl;
-    print_matrix(hC, m, n);
-    cout << endl;
-    expose(hA, hB, hC, m, n, k);
 }

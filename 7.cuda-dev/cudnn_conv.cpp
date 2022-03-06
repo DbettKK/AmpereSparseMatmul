@@ -8,62 +8,11 @@
 
 #include<cudnn.h>
 
+#include"cuda_utils.h"
+
 using namespace std;
 
-#define CHECK_CUDNN(func)                                                      \
-{                                                                              \
-    cudnnStatus_t status = (func);                                             \
-    if (status != CUDNN_STATUS_SUCCESS) {                                      \
-        printf("CUDNN failed at line %d with error: %s (%d)\n",                \
-               __LINE__, cudnnGetErrorString(status), status);                 \
-        return 0;                                                              \
-    }                                                                          \
-}
 
-#define CHECK_CUDA(func)                                                       \
-{                                                                              \
-    cudaError_t status = (func);                                               \
-    if (status != cudaSuccess) {                                               \
-        printf("CUDA API failed at line %d with error: %s (%d)\n",             \
-               __LINE__, cudaGetErrorString(status), status);                  \
-        return EXIT_FAILURE;                                                   \
-    }                                                                          \
-}
-
-void print_tensor(float *item, int n, int c, int w, int h) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < c; j++) {
-            for (int k = 0; k < w; k++) {
-                for (int v = 0; v < h; v++) {
-                    cout << item[i * c * w * h + j * w * h + k * h + v] << " ";
-                }
-                cout << endl;
-            }
-            cout << endl;
-        }
-        cout << endl;
-    }
-}
-
-float **read_bin(int data_size, int kernel_size) {
-    float **ret = (float **)malloc(sizeof(float *) * 2);
-    float *data = (float *)malloc(data_size);
-    float *kernel = (float *)malloc(kernel_size);
-
-    ifstream a_fs("data.bin", ios_base::binary);
-    a_fs.read((char *)data, data_size);
-    ifstream b_fs("kernel.bin", ios_base::binary);
-    b_fs.read((char *)kernel, kernel_size);
-
-    for (int i = 0; i < data_size / sizeof(float); i++) {
-        cout << data[i] << " ";
-    }
-    cout << endl;
-
-    ret[0] = data;
-    ret[1] = kernel;
-    return ret;
-}
 
 
 int main() {
@@ -79,10 +28,6 @@ int main() {
     CHECK_CUDNN(cudnnCreate(&handle))
 
     // input
-//    float *input = (float *)malloc(data_size);
-//    for (int i = 0; i < data_n * data_c * data_w * data_h; i++) {
-//        input[i] = rand() % 8;
-//    }
     float *input = files[0];
     cout << "input: " << endl;
     print_tensor(input, data_n, data_c, data_w, data_h);
@@ -96,12 +41,6 @@ int main() {
 
 
     // kernel
-
-//    float *kernel = (float *)malloc(kernel_size);
-//    for (int i = 0; i < kernel_n * kernel_c * kernel_w * kernel_h; i++) {
-//        if (i % 2) kernel[i] = 0;
-//        else kernel[i] = rand() % 5;
-//    }
     float *kernel = files[1];
     cout << "kernel: " << endl;
     print_tensor(kernel, kernel_n, kernel_c, kernel_w, kernel_h);
@@ -169,13 +108,13 @@ int main() {
 
     // workspace size && allocate memory
     size_t workspace_size = 0;
-    cudnnGetConvolutionForwardWorkspaceSize(handle,
+    CHECK_CUDNN( cudnnGetConvolutionForwardWorkspaceSize(handle,
                                             input_descriptor,
                                             kernel_descriptor,
                                             conv_descriptor,
                                             output_descriptor,
                                             algo,
-                                            &workspace_size);
+                                            &workspace_size) )
 
     void * workspace = nullptr;
     cudaMalloc(&workspace, workspace_size);
@@ -194,12 +133,12 @@ int main() {
 
 
     // calculate
-    cudnnConvolutionForward(handle,
+    CHECK_CUDNN( cudnnConvolutionForward(handle,
                             &alpha, input_descriptor, d_input,
                             kernel_descriptor, d_kernel,
                             conv_descriptor, algo,
                             workspace, workspace_size,
-                            &beta, output_descriptor, d_output);
+                            &beta, output_descriptor, d_output) )
 
 
 
@@ -208,12 +147,12 @@ int main() {
     // destroy
     cudaFree(workspace);
 
-    cudnnDestroyTensorDescriptor(input_descriptor);
-    cudnnDestroyTensorDescriptor(output_descriptor);
-    cudnnDestroyConvolutionDescriptor(conv_descriptor);
-    cudnnDestroyFilterDescriptor(kernel_descriptor);
+    CHECK_CUDNN(cudnnDestroyTensorDescriptor(input_descriptor))
+    CHECK_CUDNN(cudnnDestroyTensorDescriptor(output_descriptor))
+    CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(conv_descriptor))
+    CHECK_CUDNN(cudnnDestroyFilterDescriptor(kernel_descriptor))
 
-    cudnnDestroy(handle);
+    CHECK_CUDNN(cudnnDestroy(handle))
 
     cout << "output: " << endl;
     print_tensor(output, out_n, out_c, out_w, out_h);
