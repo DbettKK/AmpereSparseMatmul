@@ -1,12 +1,14 @@
-#include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-#include<cusparseLt.h>       // cusparseLt header
+#include<iostream>
+#include<fstream>
+
 #include<cstdint>
 #include<cstdio>
 #include<cstring>
-#include<cuda_fp16.h>
 #include<cstdlib>
-#include<fstream>
-#include<iostream>
+
+#include<cuda_fp16.h>
+#include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+#include<cusparseLt.h>       // cusparseLt header
 
 #include"cuda_utils.h"
 
@@ -58,7 +60,7 @@ void cmp_cpu_gpu(__half *gpu, __half *cpu, int m, int n) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             int pos = i * n + j;
-            if (gpu[pos] - cpu[pos] > 0.01) {
+            if (gpu[pos] - cpu[pos] > 0.0001) {
                 cnt++;
             }
         }
@@ -302,7 +304,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune the A matrix (in-place) and check the correcteness
-    //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
     // 这一步可以省略 ↑
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
     int is_valid;
@@ -329,9 +331,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     printf("best alg: %d\n", alg_id);
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Perform the matrix multiplication
-    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB,
-                                     &beta, dC, dD, d_workspace, streams,
-                                     num_streams) )
+    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // destroy plan and handle
     CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matA) )
