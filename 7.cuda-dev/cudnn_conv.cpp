@@ -12,9 +12,6 @@
 
 using namespace std;
 
-
-
-
 int main() {
     // read from bin_file
     int data_n = 1, data_c = 1, data_w = 16, data_h = 16;

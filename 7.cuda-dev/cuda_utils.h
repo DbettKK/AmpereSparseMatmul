@@ -64,6 +64,16 @@ const int m_global = 16;
 const int k_global = 16;
 const int n_global = 12;
 
+string path = "kernel_3x3/16x16/";
+
+string data_path = path + "data.bin";
+string kernel_path = path + "kernel.bin";
+string a_path = path + "a.bin";
+string b_path = path + "b.bin";
+string c_path = path + "c.bin";
+
+
+
 // ======================================================================= //
 
 void print_matrix(__half *, int, int);
@@ -147,9 +157,9 @@ float **read_bin(int data_size, int kernel_size) {
     float *data = (float *)malloc(data_size);
     float *kernel = (float *)malloc(kernel_size);
 
-    ifstream a_fs("data.bin", ios_base::binary);
+    ifstream a_fs(data_path, ios_base::binary);
     a_fs.read((char *)data, data_size);
-    ifstream b_fs("kernel.bin", ios_base::binary);
+    ifstream b_fs(kernel_path, ios_base::binary);
     b_fs.read((char *)kernel, kernel_size);
 
     for (int i = 0; i < data_size / sizeof(float); i++) {
@@ -167,11 +177,11 @@ float **read_bin(int m, int n, int k) {
     float *mat_a_host = new float[m * k];
     float *mat_b_host = new float[k * n];
     float *mat_c_host = new float[m * n];
-    ifstream a_fs("a.bin", ios_base::binary);
+    ifstream a_fs(a_path, ios_base::binary);
     a_fs.read((char *)mat_a_host, m * k * sizeof(float));
-    ifstream b_fs("b.bin", ios_base::binary);
+    ifstream b_fs(b_path, ios_base::binary);
     b_fs.read((char *)mat_b_host, k * n * sizeof(float));
-    ifstream c_fs("c.bin", ios_base::binary);
+    ifstream c_fs(c_path, ios_base::binary);
     c_fs.read((char *)mat_c_host, m * n * sizeof(float));
 
     ret[0] = mat_a_host;
