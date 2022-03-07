@@ -64,6 +64,9 @@ const int m_global = 16;
 const int k_global = 16;
 const int n_global = 12;
 
+const int data_n_global = 1, data_c_global = 1, data_w_global = 16, data_h_global = 16;
+const int kernel_n_global = 64, kernel_c_global = 1, kernel_w_global = 3, kernel_h_global = 3;
+
 string path = "kernel_3x3/16x16/";
 
 string data_path = path + "data.bin";

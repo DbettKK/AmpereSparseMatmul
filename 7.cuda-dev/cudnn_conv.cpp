@@ -14,9 +14,9 @@ using namespace std;
 
 int main() {
     // read from bin_file
-    int data_n = 1, data_c = 1, data_w = 16, data_h = 16;
+    int data_n = data_n_global, data_c = data_c_global, data_w = data_w_global, data_h = data_h_global;
     int data_size = data_n * data_c * data_w * data_h * sizeof(float);
-    int kernel_n = 64, kernel_c = 1, kernel_w = 3, kernel_h = 3;
+    int kernel_n = kernel_n_global, kernel_c = kernel_c_global, kernel_w = kernel_w_global, kernel_h = kernel_h_global;
     int kernel_size = kernel_n * kernel_c * kernel_w * kernel_h * sizeof(float);
 
     float **files = read_bin(data_size, kernel_size);
