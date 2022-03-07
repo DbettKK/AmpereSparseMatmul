@@ -1,4 +1,5 @@
 import random
+import sys
 
 import numpy as np
 
@@ -68,10 +69,10 @@ def kernel_im2col(core, core_n, core_c, core_w, core_h):
     return core.reshape(core_n, core_c * core_w * core_h).T
 
 
-if __name__ == '__main__':
-    data_n, data_c, data_w, data_h = 1, 1, 5, 5
-    kernel_n, kernel_c, kernel_w, kernel_h = 12, 1, 4, 4
-    padding = 1
+def mtest(data_num, kernel_num):
+    data_n, data_c, data_w, data_h = 1, 1, data_num, data_num
+    kernel_n, kernel_c, kernel_w, kernel_h = 64, 1, kernel_num, kernel_num
+    padding = 0
     stride = 1
     dtype = 'float32'
 
@@ -85,11 +86,49 @@ if __name__ == '__main__':
     m = data_trans_w
     k = data_trans_h
     n = kernel_n
-    print(data)
-    print(kernel)
+    # print(data)
+    # print(kernel)
     print(m, k, n)
-    print(data_trans)
-    print(kernel_trans)
+    # print(data_trans)
+    # print(kernel_trans)
+
+    zero_matrix = make_zero_mat(m, n, dtype)
+
+    # to bin_file
+    path = 'kernel_' + str(kernel_num) + 'x' + str(kernel_num) + '/' + str(data_num) + 'x' + str(data_num)
+    print(path)
+    data.tofile(path + '/data.bin')
+    kernel.tofile(path + '/kernel.bin')
+    data_trans.tofile(path + '/a.bin')
+    kernel_trans.tofile(path + '/b.bin')
+    zero_matrix.tofile(path + '/c.bin')
+
+    ans = np.matmul(data_trans, kernel_trans)
+    ans.tofile(path + '/answer.bin')
+
+
+if __name__ == '__main__':
+    data_n, data_c, data_w, data_h = 1, 1, 16, 16
+    kernel_n, kernel_c, kernel_w, kernel_h = 64, 1, 3, 3
+    padding = 0
+    stride = 1
+    dtype = 'float32'
+
+    data = make_tensor(data_n, data_c, data_w, data_h, dtype)
+    kernel = make_tensor(kernel_n, kernel_c, kernel_w, kernel_h, dtype)
+
+    data_trans = im2col(data, kernel_h, kernel_w, stride, padding, dtype)
+    data_trans_w, data_trans_h = data_trans.shape
+    kernel_trans = kernel_im2col(kernel, kernel_n, kernel_c, kernel_w, kernel_h)
+
+    m = data_trans_w
+    k = data_trans_h
+    n = kernel_n
+    #print(data)
+    #print(kernel)
+    print(m, k, n)
+    #print(data_trans)
+    #print(kernel_trans)
 
     zero_matrix = make_zero_mat(m, n, dtype)
 
@@ -100,4 +139,6 @@ if __name__ == '__main__':
     kernel_trans.tofile('b.bin')
     zero_matrix.tofile('c.bin')
 
-    print(np.matmul(data_trans, kernel_trans))
+    ans = np.matmul(data_trans, kernel_trans)
+    print(ans)
+    # ans.tofile('answer.bin')

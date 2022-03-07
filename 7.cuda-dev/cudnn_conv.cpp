@@ -17,9 +17,9 @@ using namespace std;
 
 int main() {
     // read from bin_file
-    int data_n = 1, data_c = 1, data_w = 5, data_h = 5;
+    int data_n = 1, data_c = 1, data_w = 16, data_h = 16;
     int data_size = data_n * data_c * data_w * data_h * sizeof(float);
-    int kernel_n = 12, kernel_c = 1, kernel_w = 4, kernel_h = 4;
+    int kernel_n = 64, kernel_c = 1, kernel_w = 3, kernel_h = 3;
     int kernel_size = kernel_n * kernel_c * kernel_w * kernel_h * sizeof(float);
 
     float **files = read_bin(data_size, kernel_size);
@@ -56,7 +56,7 @@ int main() {
     cudnnConvolutionDescriptor_t conv_descriptor;
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&conv_descriptor))
     CHECK_CUDNN(cudnnSetConvolution2dDescriptor(conv_descriptor,
-                                    1, 1, // zero-padding
+                                    0, 0, // zero-padding
                                     1, 1, // stride
                                     1, 1, // dilation 卷积核膨胀 膨胀后用0填充空位
                                     // 卷积是需要将卷积核旋转180°再进行后续的 -> CUDNN_CONVOLUTION
