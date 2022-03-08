@@ -77,7 +77,7 @@ const int m_global = data_n_global * out_w * out_h;
 const int k_global = kernel_w_global * kernel_h_global;
 const int n_global = kernel_n_global;
 
-string path = "kernel_" + kernel_w_global + "x" + kernel_w_global + "/" + data_w_global + "x" + data_w_global + "/";
+string path = "kernel_" + to_string(kernel_w_global) + "x" + to_string(kernel_w_global) + "/" + to_string(data_w_global) + "x" + to_string(data_w_global) + "/";
 
 string data_path = path + "data.bin";
 string kernel_path = path + "kernel.bin";
