@@ -73,9 +73,9 @@ const int kernel_n_global = 64, kernel_c_global = 1, kernel_w_global = 3, kernel
 const int out_w = (data_w_global + 2 * padding_global - kernel_w_global) / stride_global + 1;
 const int out_h = (data_h_global + 2 * padding_global - kernel_h_global) / stride_global + 1;
 
-const int m = data_n_global * out_w * out_h;
-const int k = kernel_w_global * kernel_h_global;
-const int n = kernel_n_global;
+const int m_global = data_n_global * out_w * out_h;
+const int k_global = kernel_w_global * kernel_h_global;
+const int n_global = kernel_n_global;
 
 string path = "kernel_3x3/16x16/";
 
