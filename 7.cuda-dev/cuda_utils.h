@@ -116,6 +116,7 @@ void print_matrix(__half *item, int row, int col) {
 }
 
 void print_matrix(const int &m, const int &n, const float *A, const int &lda) {
+    if (lda > 100) return;
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             printf("%0.2f ", A[j * lda + i]);
@@ -125,6 +126,7 @@ void print_matrix(const int &m, const int &n, const float *A, const int &lda) {
 }
 
 void print_tensor(float *item, int n, int c, int w, int h) {
+    if (n * c * w * h > 300) return;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < c; j++) {
             for (int k = 0; k < w; k++) {
