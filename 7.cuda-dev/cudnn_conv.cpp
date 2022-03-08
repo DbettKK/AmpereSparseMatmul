@@ -19,6 +19,10 @@ int main() {
     int kernel_n = kernel_n_global, kernel_c = kernel_c_global, kernel_w = kernel_w_global, kernel_h = kernel_h_global;
     int kernel_size = kernel_n * kernel_c * kernel_w * kernel_h * sizeof(float);
 
+    int padding = padding_global;
+    int stride = stride_global;
+    int dilation = 1;
+
     float **files = read_bin(data_size, kernel_size);
     //handle
     cudnnHandle_t handle;
@@ -54,8 +58,8 @@ int main() {
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&conv_descriptor))
     CHECK_CUDNN(cudnnSetConvolution2dDescriptor(conv_descriptor,
                                     0, 0, // zero-padding
-                                    1, 1, // stride
-                                    1, 1, // dilation 卷积核膨胀 膨胀后用0填充空位
+                                    stride, stride, // stride
+                                    dilation, dilation, // dilation 卷积核膨胀 膨胀后用0填充空位
                                     // 卷积是需要将卷积核旋转180°再进行后续的 -> CUDNN_CONVOLUTION
                                     CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT))
 
