@@ -34,11 +34,11 @@ int main() {
     print_tensor(input, data_n, data_c, data_w, data_h);
 
     cudnnTensorDescriptor_t input_descriptor;
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&input_descriptor))
-    CHECK_CUDNN(cudnnSetTensor4dDescriptor(input_descriptor,
+    CHECK_CUDNN( cudnnCreateTensorDescriptor(&input_descriptor) )
+    CHECK_CUDNN( cudnnSetTensor4dDescriptor(input_descriptor,
                                CUDNN_TENSOR_NHWC,
                                CUDNN_DATA_FLOAT,
-                               data_n, data_c, data_w, data_h)) // n, c, w, h
+                               data_n, data_c, data_w, data_h) ) // n, c, w, h
 
 
     // kernel
@@ -46,52 +46,52 @@ int main() {
     cout << "kernel: " << endl;
     print_tensor(kernel, kernel_n, kernel_c, kernel_w, kernel_h);
     cudnnFilterDescriptor_t kernel_descriptor;
-    CHECK_CUDNN(cudnnCreateFilterDescriptor(&kernel_descriptor))
-    CHECK_CUDNN(cudnnSetFilter4dDescriptor(kernel_descriptor,
+    CHECK_CUDNN( cudnnCreateFilterDescriptor(&kernel_descriptor) )
+    CHECK_CUDNN( cudnnSetFilter4dDescriptor(kernel_descriptor,
                                CUDNN_DATA_FLOAT,
                                CUDNN_TENSOR_NCHW,
-                               kernel_n, kernel_c, kernel_w, kernel_h))
+                               kernel_n, kernel_c, kernel_w, kernel_h) )
 
 
     // convolution descriptor
     cudnnConvolutionDescriptor_t conv_descriptor;
-    CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&conv_descriptor))
-    CHECK_CUDNN(cudnnSetConvolution2dDescriptor(conv_descriptor,
+    CHECK_CUDNN( cudnnCreateConvolutionDescriptor(&conv_descriptor) )
+    CHECK_CUDNN( cudnnSetConvolution2dDescriptor(conv_descriptor,
                                     0, 0, // zero-padding
                                     stride, stride, // stride
                                     dilation, dilation, // dilation 卷积核膨胀 膨胀后用0填充空位
                                     // 卷积是需要将卷积核旋转180°再进行后续的 -> CUDNN_CONVOLUTION
-                                    CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT))
+                                    CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT) )
 
 
     // output
     int out_n, out_c, out_h, out_w;
-    CHECK_CUDNN(cudnnGetConvolution2dForwardOutputDim(conv_descriptor,
+    CHECK_CUDNN( cudnnGetConvolution2dForwardOutputDim(conv_descriptor,
                                input_descriptor,
                                kernel_descriptor,
-                               &out_n, &out_c, &out_h, &out_w))
+                               &out_n, &out_c, &out_h, &out_w) )
     printf("output: %d * %d * %d * %d\n", out_n, out_c, out_h, out_w);
     int out_size = out_n * out_c * out_h * out_w * sizeof(float);
     float *output = (float *)malloc(out_size);
     cudnnTensorDescriptor_t output_descriptor;
-    CHECK_CUDNN(cudnnCreateTensorDescriptor(&output_descriptor))
-    CHECK_CUDNN(cudnnSetTensor4dDescriptor(output_descriptor,
+    CHECK_CUDNN( cudnnCreateTensorDescriptor(&output_descriptor) )
+    CHECK_CUDNN( cudnnSetTensor4dDescriptor(output_descriptor,
                                CUDNN_TENSOR_NHWC,
                                CUDNN_DATA_FLOAT,
-                               out_n, out_c, out_h, out_w))
+                               out_n, out_c, out_h, out_w) )
 
 
     // algorithm
     cudnnConvolutionFwdAlgoPerf_t algo_perf[4];
     int ret;
-    CHECK_CUDNN(cudnnFindConvolutionForwardAlgorithm(handle,
+    CHECK_CUDNN( cudnnFindConvolutionForwardAlgorithm(handle,
                                         input_descriptor,
                                         kernel_descriptor,
                                         conv_descriptor,
                                         output_descriptor,
                                         4,
                                         &ret,
-                                        algo_perf))
+                                        algo_perf) )
 
     cudnnConvolutionFwdAlgo_t algo;
     bool flag = false;
@@ -118,7 +118,7 @@ int main() {
                                             &workspace_size) )
 
     void * workspace = nullptr;
-    cudaMalloc(&workspace, workspace_size);
+    CHECK_CUDA( cudaMalloc(&workspace, workspace_size) )
 
     // convolution
     auto alpha = 1.0f, beta = 0.0f;
@@ -143,10 +143,10 @@ int main() {
 
 
 
-    cudaMemcpy(output, d_output, out_size, cudaMemcpyDeviceToHost);
+    CHECK_CUDA( cudaMemcpy(output, d_output, out_size, cudaMemcpyDeviceToHost) )
 
     // destroy
-    cudaFree(workspace);
+    CHECK_CUDA( cudaFree(workspace) )
 
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(input_descriptor))
     CHECK_CUDNN(cudnnDestroyTensorDescriptor(output_descriptor))
