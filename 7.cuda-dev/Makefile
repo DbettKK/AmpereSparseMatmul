@@ -21,7 +21,7 @@ profile:
 	nsys profile --stats=true ./spmma
 
 clean:
-	rm -f spmma spmma_static spmma.o a* spmma_d* report* *.bin cudnn_conv cublas_gemm
+	rm -f spmma spmma_static report* cudnn_conv cublas_gemm
 
 test:
 	@echo "\n==== SpMMA Test ====\n"
