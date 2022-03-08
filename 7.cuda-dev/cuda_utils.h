@@ -1,5 +1,5 @@
 #include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-//#include<cusparseLt.h>       // cusparseLt header
+#include<cusparseLt.h>       // cusparseLt header
 #include<cstdint>
 #include<cstdio>
 #include<cstring>
