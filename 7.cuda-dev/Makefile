@@ -17,8 +17,14 @@ data: generate_data.py
 spmma_static: spmma.cpp
 	nvcc spmma.cpp -o spmma_static -Xlinker=--whole-archive -Xlinker=/lib64/libcusparseLt_static.a -Xlinker=--no-whole-archive -lcusparse
 
-profile:
+profile_spmma:
 	nsys profile --stats=true ./spmma
+
+profile_cudnn:
+	nsys profile --stats=true ./cudnn_conv
+
+profile_cublas:
+	nsys profile --stats=true ./cublas_gemm
 
 clean:
 	rm -f spmma spmma_static report* cudnn_conv cublas_gemm
@@ -32,4 +38,4 @@ test:
 	./cublas_gemm
 
 # 在Makefile中，.PHONY后面的target表示的也是一个伪造的target, 而不是真实存在的文件target，注意Makefile的target默认是文件
-.PHONY: clean all test profile
+.PHONY: clean all test profile_spmma profile_cudnn profile_cublas
