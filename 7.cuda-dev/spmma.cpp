@@ -326,10 +326,10 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     int num_streams = 0;
     cudaStream_t* streams = nullptr;
 //    CHECK_CUSPARSE( cusparseLtMatmulSearch(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC,dD, d_workspace, streams, num_streams) )
-//    int alg_id;
-//    // maybe 没用？
-//    CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg_id, sizeof(alg_id)) )
-//    printf("best alg: %d\n", alg_id);
+    int alg_id;
+    // maybe 没用？
+    CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg_id, sizeof(alg_id)) )
+    printf("best alg: %d\n", alg_id);
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Perform the matrix multiplication
     CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
