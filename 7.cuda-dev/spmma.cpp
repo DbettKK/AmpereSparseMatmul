@@ -331,7 +331,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     printf("hA: \n");
     print_matrix(hA_tmp, m, k);
     printf("hA_compressed: \n");
-    print_matrix(hA_compressed, m / 2, compressed_size / sizeof(__half) / m / 2);
+    print_matrix(hA_compressed, m / 2, compressed_size / sizeof(__half) / m);
     printf("================================================\n");
 
 
