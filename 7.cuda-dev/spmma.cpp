@@ -304,16 +304,16 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune the A matrix (in-place) and check the correcteness
-    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
-    // 这一步可以省略 ↑
-    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
-    int is_valid;
-    CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
-    CHECK_CUDA( cudaStreamSynchronize(stream) )
-    if (is_valid != 0) {
-        std::printf("!!!! The matrix has been pruned in a wrong way. cusparseLtMatmul will not provide correct results\n");
-        return EXIT_FAILURE;
-    }
+//    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+//    // 这一步可以省略 ↑
+//    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
+//    int is_valid;
+//    CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
+//    CHECK_CUDA( cudaStreamSynchronize(stream) )
+//    if (is_valid != 0) {
+//        std::printf("!!!! The matrix has been pruned in a wrong way. cusparseLtMatmul will not provide correct results\n");
+//        return EXIT_FAILURE;
+//    }
     //--------------------------------------------------------------------------
     // Compress the A matrix
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
