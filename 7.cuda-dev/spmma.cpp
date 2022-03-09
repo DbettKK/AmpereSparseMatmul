@@ -325,9 +325,15 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     void* d_workspace = nullptr;
     int num_streams = 0;
     cudaStream_t* streams = nullptr;
-//    CHECK_CUSPARSE( cusparseLtMatmulSearch(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC,dD, d_workspace, streams, num_streams) )
+
+    /*
+        The function evaluates all available algorithms for the matrix multiplication and automatically updates the ·plan· by selecting the fastest one.
+        The functionality is intended to be used for auto-tuning purposes when the same operation is repeated multiple times over different inputs.
+        The function behavior is the same of cusparseLtMatmul().
+    */
+    //CHECK_CUSPARSE( cusparseLtMatmulSearch(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC,dD, d_workspace, streams, num_streams) )
+
     int alg_id;
-    // maybe 没用？
     CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg_id, sizeof(alg_id)) )
     printf("best alg: %d\n", alg_id);
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
