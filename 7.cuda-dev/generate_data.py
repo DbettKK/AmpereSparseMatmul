@@ -5,7 +5,7 @@ import numpy as np
 
 
 def make_dense_mat(row, col, dtype):
-    return np.random.rand(row, col).astype(dtype)
+    return np.random.randint(0, 5, (row, col)).astype(dtype)
 
 
 def make_zero_mat(row, col, dtype):
@@ -13,7 +13,7 @@ def make_zero_mat(row, col, dtype):
 
 
 def make_sparse_mat(row, col, dtype):
-    a = np.random.rand(row, col).astype(dtype)
+    a = np.random.randint(0, 5, (row, col)).astype(dtype)
     for i in range(row):
         for j in range(col // 4):
             i1 = random.randint(0, 3)
@@ -107,7 +107,21 @@ def mtest(data_num, kernel_num):
     ans.tofile(path + '/answer.bin')
 
 
+def mma():
+    m, n, k = 16, 8, 16
+    dtype = 'float32'
+    A = make_sparse_mat(m, k, dtype)
+    B = make_dense_mat(k, n, dtype)
+    C = make_zero_mat(m, n, dtype)
+    A.tofile('a.bin')
+    B.tofile('b.bin')
+    C.tofile('c.bin')
+    print(np.matmul(A, B))
+
+
 if __name__ == '__main__':
+    mma()
+    sys.exit(0)
     data_n, data_c, data_w, data_h = 1, 1, 1024, 1024
     kernel_n, kernel_c, kernel_w, kernel_h = 64, 1, 7, 7
     padding = 0

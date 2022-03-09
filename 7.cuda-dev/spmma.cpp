@@ -320,6 +320,21 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
 
     CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
+
+    // print to check
+    __half *hA_compressed = new __half[compressed_size];
+    __half *hA_tmp = new __half[m * k];
+    CHECK_CUDA( cudaMemcpy(hA_compressed, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(hA_tmp, dA, m * k, cudaMemcpyDeviceToHost) )
+    printf("================================================\n");
+    printf("compressed_size: %d\n", compressed_size);
+    printf("hA: \n");
+    print_matrix(hA_tmp, m, k);
+    printf("hA_compressed: \n");
+    print_matrix(hA_compressed, m, compressed_size / m);
+    printf("================================================\n");
+
+
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Search the best kernel
     void* d_workspace = nullptr;
@@ -332,10 +347,11 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
         The function behavior is the same of cusparseLtMatmul().
     */
     //CHECK_CUSPARSE( cusparseLtMatmulSearch(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC,dD, d_workspace, streams, num_streams) )
-
+    /*
     int alg_id;
     CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg_id, sizeof(alg_id)) )
     printf("best alg: %d\n", alg_id);
+    */
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Perform the matrix multiplication
     CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
