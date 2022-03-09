@@ -106,7 +106,7 @@ float **read_bin(int m, int n, int k);
 // ======================================================================= //
 
 void print_matrix(__half *item, int row, int col) {
-    if (row > 100 && col > 100) return;
+    if (row > 100 || col > 100) return;
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             cout << item[i * col + j] << " ";
