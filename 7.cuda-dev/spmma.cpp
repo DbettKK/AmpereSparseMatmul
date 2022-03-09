@@ -372,7 +372,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     //print_matrix(hA, m, n);
     cout<<" CPU: "<<endl;
     __half *cpu = gemm_cpu(hA, hB, m, n, k);
-    //print_matrix(cpu, m, n);
+    print_matrix(cpu, m, n);
     cmp_cpu_gpu(hC, cpu, m, n);
 }
 
