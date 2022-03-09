@@ -108,8 +108,8 @@ def mtest(data_num, kernel_num):
 
 
 if __name__ == '__main__':
-    data_n, data_c, data_w, data_h = 1, 1, 16, 16
-    kernel_n, kernel_c, kernel_w, kernel_h = 64, 1, 3, 3
+    data_n, data_c, data_w, data_h = 1, 1, 256, 256
+    kernel_n, kernel_c, kernel_w, kernel_h = 64, 1, 7, 7
     padding = 0
     stride = 1
     dtype = 'float32'
