@@ -325,13 +325,13 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     __half *hA_compressed = new __half[compressed_size];
     __half *hA_tmp = new __half[m * k];
     CHECK_CUDA( cudaMemcpy(hA_compressed, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(hA_tmp, dA, m * k, cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(hA_tmp, dA, m * k * sizeof(__half), cudaMemcpyDeviceToHost) )
     printf("================================================\n");
-    printf("compressed_size: %d\n", compressed_size);
+    printf("compressed_size: %d\n", compressed_size / sizeof(__half));
     printf("hA: \n");
     print_matrix(hA_tmp, m, k);
     printf("hA_compressed: \n");
-    print_matrix(hA_compressed, m, compressed_size / m);
+    print_matrix(hA_compressed, m, compressed_size / sizeof(__half) / m);
     printf("================================================\n");
 
 
