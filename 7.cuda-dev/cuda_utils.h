@@ -60,9 +60,9 @@ struct Matrix {
 };
 
 constexpr int EXIT_UNSUPPORTED = 2;
-//const int m_global = 16;
-//const int k_global = 16;
-//const int n_global = 12;
+const int m_global = 16;
+const int k_global = 16;
+const int n_global = 8;
 
 const int padding_global = 0;
 const int stride_global = 1;
@@ -73,9 +73,9 @@ const int kernel_n_global = 64, kernel_c_global = 1, kernel_w_global = 7, kernel
 const int out_w = (data_w_global + 2 * padding_global - kernel_w_global) / stride_global + 1;
 const int out_h = (data_h_global + 2 * padding_global - kernel_h_global) / stride_global + 1;
 
-const int m_global = data_n_global * out_w * out_h;
-const int k_global = kernel_w_global * kernel_h_global;
-const int n_global = kernel_n_global;
+//const int m_global = data_n_global * out_w * out_h;
+//const int k_global = kernel_w_global * kernel_h_global;
+//const int n_global = kernel_n_global;
 
 //string path = "kernel_" + to_string(kernel_w_global) + "x" + to_string(kernel_w_global) + "/" + to_string(data_w_global) + "x" + to_string(data_w_global) + "/";
 string path = "";
