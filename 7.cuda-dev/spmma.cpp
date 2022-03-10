@@ -24,8 +24,17 @@ __half **convert(float **array, int m, int n, int k);
 
 
 int main() {
+    int data_n = data_n_global, data_c = data_c_global, data_w = data_w_global, data_h = data_h_global;
+    int data_size = data_n * data_c * data_w * data_h;
+    int kernel_n = kernel_n_global, kernel_c = kernel_c_global, kernel_w = kernel_w_global, kernel_h = kernel_h_global;
+    int kernel_size = kernel_n * kernel_c * kernel_w * kernel_h;
+    int padding = padding_global;
+    int stride = stride_global;
     int m = m_global, k = k_global, n = n_global;
-    __half **array = convert(read_bin(m, n, k), m, n, k);
+
+    __half **ret = read_bin(data_size, kernel_size, 1);
+    __half **array = im2col(ret[0], data_n, data_c, data_h, data_w, ret[1], kernel_n, kernel_c, kernel_h, kernel_w, padding, stride);
+
     __half *hA = array[0];
     __half *hB = array[1];
     __half *hC = array[2];
@@ -304,16 +313,16 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune the A matrix (in-place) and check the correcteness
-//    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
-//    // 这一步可以省略 ↑
-//    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
-//    int is_valid;
-//    CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
-//    CHECK_CUDA( cudaStreamSynchronize(stream) )
-//    if (is_valid != 0) {
-//        std::printf("!!!! The matrix has been pruned in a wrong way. cusparseLtMatmul will not provide correct results\n");
-//        return EXIT_FAILURE;
-//    }
+    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    // 这一步可以省略 ↑
+    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
+    int is_valid;
+    CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
+    CHECK_CUDA( cudaStreamSynchronize(stream) )
+    if (is_valid != 0) {
+        std::printf("!!!! The matrix has been pruned in a wrong way. cusparseLtMatmul will not provide correct results\n");
+        return EXIT_FAILURE;
+    }
     //--------------------------------------------------------------------------
     // Compress the A matrix
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
@@ -331,7 +340,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     printf("hA: \n");
     print_matrix(hA_tmp, m, k);
     printf("hA_compressed: \n");
-    print_matrix(hA_compressed, m / 2, compressed_size / sizeof(__half) / m);
+    print_matrix(hA_compressed, m, compressed_size / sizeof(__half) / m / 2);
     printf("================================================\n");
 
 
@@ -402,4 +411,41 @@ void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k) {
     __half *output = handle_output(hD, m, m_pad, n, n_pad);
     cout << "GPU D: " << endl;
     print_matrix(output, m, n);
+}
+
+__half** im2col(__half *data, int data_n, int data_c, int data_h, int data_w, __half *kernel,
+            int kernel_n, int kernel_c, int kernel_h, int kernel_w, int stride, int padding) {
+    __half** ret = (__half**)malloc(3 * sizeof(__half*));
+
+    int out_h = (data_h + 2 * padding - kernel_h) / stride + 1;
+    int out_w = (data_w + 2 * padding - kernel_w) / stride + 1;
+
+    int m = data_n * out_h * out_w;
+    int k = kernel_c * kernel_h * kernel_w;
+    int n = kernel_n;
+
+    __half *A = (__half*)malloc(m * k * sizeof(__half));
+    __half *B = (__half*)malloc(k * n * sizeof(__half));
+    __half *C = (__half*)malloc(m * n * sizeof(__half));
+
+    A = im2col_data(data, data_n, data_c, data_h, data_w, kernel_h, kernel_w, padding, stride);
+
+    int B_cnt = 0;
+    for (int i = 0; i < kernel_n; i++) {
+        for (int j = 0; j < kernel_c; j++) {
+            for (int ki = 0; ki < kernel_h; ki++) {
+                for (int v = 0; v < kernel_w; v++) {
+                    int index = i * kernel_c * kernel_h * kernel_w + j * kernel_h * kernel_w + ki * kernel_w + v;
+                    B[B_cnt++] = kernel[index];
+                }
+            }
+        }
+    }
+
+    memset(C, 0, m * n * sizeof(__half));
+
+    ret[0] = A;
+    ret[1] = B;
+    ret[2] = C;
+    return ret;
 }

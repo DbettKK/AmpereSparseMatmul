@@ -120,10 +120,8 @@ def mma():
 
 
 if __name__ == '__main__':
-    mma()
-    sys.exit(0)
-    data_n, data_c, data_w, data_h = 1, 1, 1024, 1024
-    kernel_n, kernel_c, kernel_w, kernel_h = 64, 1, 7, 7
+    data_n, data_c, data_w, data_h = 2, 3, 6, 6
+    kernel_n, kernel_c, kernel_w, kernel_h = 1, 3, 3, 3
     padding = 0
     stride = 1
     dtype = 'float32'
@@ -139,7 +137,7 @@ if __name__ == '__main__':
     k = data_trans_h
     n = kernel_n
     #print(data)
-    #print(kernel)
+    #rint(kernel)
     print(m, k, n)
     #print(data_trans)
     #print(kernel_trans)
