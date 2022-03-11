@@ -13,7 +13,8 @@ def make_zero_mat(row, col, dtype):
 
 
 def make_sparse_mat(row, col, dtype):
-    a = np.random.randint(0, 5, (row, col)).astype(dtype)
+    # randint 左右闭区间
+    a = np.random.randint(1, 5, (row, col)).astype(dtype)
     for i in range(row):
         for j in range(col // 4):
             i1 = random.randint(0, 3)
@@ -27,6 +28,18 @@ def make_sparse_mat(row, col, dtype):
             i1 = random.randint(0, col % 4 - 1)
             a[i, col - col % 4 + i1] = 0
     return a
+
+
+def get_compressed_mat(mat_a: np.ndarray):
+    row, col = mat_a.shape
+    mat_a_cmpr = np.zeros((row, int(col / 2))).astype(mat_a.dtype)
+    for i in range(row):
+        cnt = 0
+        for j in range(col):
+            if mat_a[i, j] != 0:
+                mat_a_cmpr[i, cnt] = mat_a[i, j]
+                cnt += 1
+    return mat_a_cmpr
 
 
 def make_tensor(n, c, w, h, _dtype):
@@ -113,7 +126,9 @@ def mma():
     A = make_sparse_mat(m, k, dtype)
     B = make_dense_mat(k, n, dtype)
     C = make_zero_mat(m, n, dtype)
+    A_cmpr = get_compressed_mat(A)
     A.tofile('a.bin')
+    A_cmpr.tofile('ac.bin')
     B.tofile('b.bin')
     C.tofile('c.bin')
     print(np.matmul(A, B))

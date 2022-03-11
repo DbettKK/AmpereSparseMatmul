@@ -21,7 +21,8 @@ __half *handle_output(__half *item, int m, int m_pad, int n, int n_pad);    // �
 int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int k); // hc hd都为输出
 void expose(__half *hA, __half *hB, __half *hC, int m, int n, int k);   // 暴露的接口
 __half **convert(float **array, int m, int n, int k);
-
+__half** im2col(__half *data, int data_n, int data_c, int data_h, int data_w, __half *kernel,
+            int kernel_n, int kernel_c, int kernel_h, int kernel_w, int stride, int padding);
 
 int main() {
     int data_n = data_n_global, data_c = data_c_global, data_w = data_w_global, data_h = data_h_global;
@@ -313,6 +314,8 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune the A matrix (in-place) and check the correcteness
+    // todo: 先check 再prune
+    // todo: 测试自己compress的情况
     CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
     // 这一步可以省略 ↑
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
