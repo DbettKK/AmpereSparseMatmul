@@ -270,10 +270,11 @@ struct MatrixParam {
         for (int i = 0; i < m * k; i++) {
             A[i] = static_cast<__half>(static_cast<float>(rand() % bound));
         }
+        // 四个为一组 每一组如果前两个为0 则会忽略
         for (int i = 0; i < n; i++) {
-            for (int j = 0; j < k; j+=2) {
+            for (int j = 0; j < k; j+=4) {
                 int zero_index = rand() % 2;
-                B[(j + zero_index) * n + i] = static_cast<__half>(static_cast<float>(rand() % bound));
+                B[(j + zero_index) * n + i] = static_cast<__half>(static_cast<float>(rand() % bound + 1));
                 B[(j + 1 - zero_index) * n + i] = B[(j + 1 - zero_index) * n + i] = static_cast<__half>(static_cast<float>(0));
                 ret[j / 2 * n + i] = B[(j + zero_index) * n + i];
             }
