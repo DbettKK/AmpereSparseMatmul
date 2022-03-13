@@ -531,7 +531,7 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
         cout << "GPU_cmpr: " << endl;
         for (int i = 0; i < compressed_size / sizeof(__half); i++) {
-            cout << hB_compressed << " ";
+            cout << hB_compressed[i] << " ";
         }
         cout << endl;
 
