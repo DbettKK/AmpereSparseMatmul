@@ -505,6 +505,17 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
         CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
         CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
+        __half *hB_compressed = new __half[compressed_size / sizeof(__half)];
+        __half *hB_tmp = new __half[k * n];
+        CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+        CHECK_CUDA( cudaMemcpy(hB_tmp, dB, k * n * sizeof(__half), cudaMemcpyDeviceToHost) )
+        printf("================================================\n");
+        printf("compressed_size: %d\n", compressed_size / sizeof(__half));
+        printf("hB: \n");
+        param->print_matrix(hB_tmp, k, n);
+        printf("hB_compressed: \n");
+        param->print_matrix(hB_compressed, k, n / 2);
+        printf("================================================\n");
     } else {
         //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
 
@@ -599,7 +610,7 @@ void test_gemm(int m, int k, int n) {
     param->print_all();
     printf("cmpr:\n");
     param->print_matrix(cmpr, k / 2, n);
-    MatrixParam *ans = spmma_matmul(param, cmpr);
+    MatrixParam *ans = spmma_matmul(param, nullptr);
     //ans->check_correct();
 }
 
