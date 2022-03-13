@@ -508,13 +508,16 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
     } else {
         //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
         int m_compressed_size = k * n / 2 * sizeof(__half);
-        cout << "m_compressed_size" << m_compressed_size << endl;
+        cout << "m_compressed_size:" << m_compressed_size << endl;
 
         CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
-         cout << "compressed_size" << compressed_size << endl;
+         cout << "compressed_size:" << compressed_size << endl;
         CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
         CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
 
+        __half *newB = new __half[compressed_size / sizeof(__half)];
+        CHECK_CUDA( cudaMemcpy(newB, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+        param->print_matrix(newB, k, n);
 
 
         //CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
