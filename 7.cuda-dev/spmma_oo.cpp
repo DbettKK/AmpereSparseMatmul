@@ -514,7 +514,7 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         printf("hB: \n");
         param->print_matrix(hB_tmp, k, n);
         printf("hB_compressed: \n");
-        param->print_matrix(hB_compressed, k, n / 2);
+        param->print_matrix(hB_compressed, k, n);
         printf("================================================\n");
     } else {
         //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
