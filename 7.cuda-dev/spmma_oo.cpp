@@ -518,6 +518,8 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         param->print_matrix(hB_compressed, k, n);
         printf("================================================\n");
     } else {
+        param->print_matrix(param->B, k, n);
+        param->print_matrix(matB_cmpr, k, n / 2);
         compressed_size = k * n / 2 * sizeof(__half);
         CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
         CHECK_CUDA( cudaMemcpy(dB_compressed, matB_cmpr, compressed_size, cudaMemcpyHostToDevice) )
