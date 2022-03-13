@@ -25,6 +25,24 @@ __half** im2col(__half *data, int data_n, int data_c, int data_h, int data_w, __
             int kernel_n, int kernel_c, int kernel_h, int kernel_w, int stride, int padding);
 
 int main() {
+    int m = m_global, k = k_global, n = n_global;
+    __half **ret = read_bin(m, n, k)
+    __half *hA = ret[0];
+    __half *hB = ret[1];
+    __half *hC = ret[2];
+    cout << "A:" << endl;
+    print_matrix(hA, m, k);
+    cout << endl;
+    cout << "B:" << endl;
+    print_matrix(hB, k, n);
+    cout << endl;
+    cout << "C:" << endl;
+    print_matrix(hC, m, n);
+    __half* hD = expose(hA, hB, hC, m, n, k);
+
+}
+
+int main() {
     int data_n = data_n_global, data_c = data_c_global, data_w = data_w_global, data_h = data_h_global;
     int data_size = data_n * data_c * data_w * data_h;
     int kernel_n = kernel_n_global, kernel_c = kernel_c_global, kernel_w = kernel_w_global, kernel_h = kernel_h_global;
