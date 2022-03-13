@@ -39,12 +39,7 @@ const spmmaStatus_t DO_NOTHING = 1;
 const spmmaStatus_t ERROR = 2;
 const spmmaStatus_t UNSUPPORTED = 3;
 
-class Tensor4d;
-class ConvParam;
-class MatrixParam;
-
-class MatrixParam {
-public:
+struct MatrixParam {
     __half *A, *B, *C, *D;
     int m, k, n;
     MatrixParam(__half *A=nullptr, __half *B=nullptr, __half *C=nullptr, __half *D=nullptr, int m=0, int k=0, int n=0):
@@ -128,22 +123,22 @@ public:
         return new MatrixParam(A, B, C, ret, m, k, n);
     }
 
-    Tensor4d *im2col_rev(ConvParam *param) {
-        int out_h = param->getOut_height(), out_w = param->getOut_width();
-        __half *ret = new __half[param->data->n * param->kernel->n * out_h * out_w];
-
-        int cnt = 0;
-        for (int i = 0; i < param->data->n; i++) {
-            for (int j = 0; j < param->kernel->n; j++) {
-                int cnt_in = 0;
-                for (int v = 0; v < out_h * out_w; v++) {
-                    ret[cnt++] = D[(i * out_h * out_w + v) * param->kernel->n + j];
-                }
-            }
-        }
-
-        return new Tensor4d(ret, param->data->n, param->kernel->n, out_h, out_w);
-    }
+//    Tensor4d *im2col_rev(ConvParam *param) {
+//        int out_h = param->getOut_height(), out_w = param->getOut_width();
+//        __half *ret = new __half[param->data->n * param->kernel->n * out_h * out_w];
+//
+//        int cnt = 0;
+//        for (int i = 0; i < param->data->n; i++) {
+//            for (int j = 0; j < param->kernel->n; j++) {
+//                int cnt_in = 0;
+//                for (int v = 0; v < out_h * out_w; v++) {
+//                    ret[cnt++] = D[(i * out_h * out_w + v) * param->kernel->n + j];
+//                }
+//            }
+//        }
+//
+//        return new Tensor4d(ret, param->data->n, param->kernel->n, out_h, out_w);
+//    }
 
     bool check_correct() {
         // cpu
@@ -243,8 +238,7 @@ public:
     }
 };
 
-class Tensor4d {
-public:
+struct Tensor4d {
     __half *tensor;
     int n, c, h, w;
     Tensor4d(__half *tensor, int n, int c, int h, int w): tensor(tensor), n(n), c(c), h(h), w(w) {}
@@ -287,8 +281,7 @@ public:
     }
 };
 
-class ConvParam {
-public:
+struct ConvParam {
     Tensor4d *data, *kernel;
     int padding, stride;
 
@@ -577,7 +570,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
     MatrixParam *matrix = param->im2col();  // 最初版本的matrix
     MatrixParam *ans = spmma_matmul(matrix, nullptr);   // 这是fix后并且计算了D的matrix
     MatrixParam *refix = ans->refix_matrix(matrix->m, matrix->n);    // 是把D重新恢复的matrix 其他都不变
-    Tensor4d *ret = refix->im2col_rev(param);
+    Tensor4d *ret = param->im2col_rev(refix);
     return ret;
 }
 
