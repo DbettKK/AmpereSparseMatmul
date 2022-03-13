@@ -39,6 +39,8 @@ const spmmaStatus_t DO_NOTHING = 1;
 const spmmaStatus_t ERROR = 2;
 const spmmaStatus_t UNSUPPORTED = 3;
 
+struct Tensor4d;
+
 struct MatrixParam {
     __half *A, *B, *C, *D;
     int m, k, n;
