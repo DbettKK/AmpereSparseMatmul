@@ -533,7 +533,7 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         printf("hB: \n");
         param->print_matrix(hB_tmp, k, n);
         printf("hB_compressed: \n");
-        param->print_matrix(hB_compressed, k, n / 2);
+        param->print_matrix(hB_compressed, k, n);
         printf("================================================\n");
 
 
@@ -606,6 +606,7 @@ void test_gemm(int m, int k, int n) {
     MatrixParam *param = new MatrixParam(m, k, n);
     param->D = new __half[m * n];
     memset(param->D, 0, m * n * sizeof(__half));
+    param->print_matrix(param->B, k, n);
     param->read_bin("a.bin", "b.bin", "c.bin");
     MatrixParam *ans = spmma_matmul(param, nullptr);
     //ans->check_correct();

@@ -123,12 +123,12 @@ def mtest(data_num, kernel_num):
 def mma():
     m, n, k = 16, 16, 16
     dtype = 'float32'
-    A = make_sparse_mat(m, k, dtype)
-    B = make_dense_mat(k, n, dtype)
+    A = make_dense_mat(m, k, dtype)
+    B = make_sparse_mat(k, n, dtype)
     C = make_zero_mat(m, n, dtype)
-    A_cmpr = get_compressed_mat(A)
+    B_cmpr = get_compressed_mat(B)
     A.tofile('a.bin')
-    A_cmpr.tofile('ac.bin')
+    B_cmpr.tofile('bc.bin')
     B.tofile('b.bin')
     C.tofile('c.bin')
     print(np.matmul(A, B))
