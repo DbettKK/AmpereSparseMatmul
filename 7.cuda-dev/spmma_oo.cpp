@@ -39,11 +39,12 @@ const spmmaStatus_t DO_NOTHING = 1;
 const spmmaStatus_t ERROR = 2;
 const spmmaStatus_t UNSUPPORTED = 3;
 
-struct Tensor4d;
-struct ConvParam;
-struct MatrixParam;
+class Tensor4d;
+class ConvParam;
+class MatrixParam;
 
-struct MatrixParam {
+class MatrixParam {
+public:
     __half *A, *B, *C, *D;
     int m, k, n;
     MatrixParam(__half *A=nullptr, __half *B=nullptr, __half *C=nullptr, __half *D=nullptr, int m=0, int k=0, int n=0):
@@ -242,7 +243,8 @@ struct MatrixParam {
     }
 };
 
-struct Tensor4d {
+class Tensor4d {
+public:
     __half *tensor;
     int n, c, h, w;
     Tensor4d(__half *tensor, int n, int c, int h, int w): tensor(tensor), n(n), c(c), h(h), w(w) {}
@@ -285,7 +287,8 @@ struct Tensor4d {
     }
 };
 
-struct ConvParam {
+class ConvParam {
+public:
     Tensor4d *data, *kernel;
     int padding, stride;
 
