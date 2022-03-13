@@ -68,7 +68,7 @@ int main2() {
     print_matrix(hC, m, n);
     cout << endl;
     __half* hD = expose(hA, hB, hC, m, n, k);
-    __half** rev = im2col_rev(hD, data_n, data_c, data_h, data_w, kernel_n, kernel_c, kernel_h, kernel_w, padding, stride);
+    //__half** rev = im2col_rev(hD, data_n, data_c, data_h, data_w, kernel_n, kernel_c, kernel_h, kernel_w, padding, stride);
     for (int i = 0; i < data_n; i++) {
         for (int j = 0; j < kernel_n; j++) {
             printf("================\n");
