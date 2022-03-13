@@ -14,6 +14,26 @@ using namespace std;
 
 using spmmaStatus_t = int;
 
+#define CHECK_CUDA(func)                                                       \
+{                                                                              \
+    cudaError_t status = (func);                                               \
+    if (status != cudaSuccess) {                                               \
+        printf("CUDA API failed at line %d with error: %s (%d)\n",             \
+               __LINE__, cudaGetErrorString(status), status);                  \
+        return EXIT_FAILURE;                                                   \
+    }                                                                          \
+}
+
+#define CHECK_CUSPARSE(func)                                                   \
+{                                                                              \
+    cusparseStatus_t status = (func);                                          \
+    if (status != CUSPARSE_STATUS_SUCCESS) {                                   \
+        printf("CUSPARSE API failed at line %d with error: %s (%d)\n",         \
+               __LINE__, cusparseGetErrorString(status), status);              \
+        return EXIT_FAILURE;                                                   \
+    }                                                                          \
+}
+
 const spmmaStatus_t SUCCESS = 0;
 const spmmaStatus_t DO_NOTHING = 1;
 const spmmaStatus_t ERROR = 2;
@@ -159,10 +179,10 @@ struct MatrixParam {
 
         ifstream a_fs(matA_path, ios_base::binary);
         a_fs.read((char *)matA, m * k * sizeof(float));
-        ifstream a_fs(matB_path, ios_base::binary);
-        a_fs.read((char *)matB, k * n * sizeof(float));
-        ifstream a_fs(matC_path, ios_base::binary);
-        a_fs.read((char *)matC, m * n * sizeof(float));
+        ifstream b_fs(matB_path, ios_base::binary);
+        b_fs.read((char *)matB, k * n * sizeof(float));
+        ifstream c_fs(matC_path, ios_base::binary);
+        c_fs.read((char *)matC, m * n * sizeof(float));
 
         if (A == nullptr)  A = new __half[m * k];
         if (B == nullptr)  B = new __half[k * n];
