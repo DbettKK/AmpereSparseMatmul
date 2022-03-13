@@ -58,24 +58,6 @@ int main() {
     }
 }
 
-void spmma_matmul() {
-    // 1. pad matrix to satisfy mma.sp
-    // 2. calculate
-    // 3. 可选 check answer with cpu
-}
-
-void spmma_conv() {
-    // 1. im2col
-    // 2. pad matrix to satisfy mma.sp
-    // 3. calculate
-    // 4. 可选 check answer with cpu
-    // 5. im2col reverse
-}
-
-int main() {
-    // 1. read from bin
-}
-
 int check_gpu() {
     // 检查GPU是否支持cuSparseLt
     int major_cc, minor_cc;
