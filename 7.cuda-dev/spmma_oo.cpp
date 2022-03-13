@@ -167,9 +167,8 @@ struct MatrixParam {
         return new MatrixParam(A, B, C, ret, m, k, n);
     }
 
-    Tensor4d *im2col_rev(int data_n, int kernel_n, int out_h, out_w) {
+    Tensor4d *im2col_rev(int data_n, int kernel_n, int out_h, int out_w) {
         __half *ret = new __half[data_n * kernel_n * out_h * out_w];
-
         int cnt = 0;
         for (int i = 0; i < data_n; i++) {
             for (int j = 0; j < kernel_n; j++) {
