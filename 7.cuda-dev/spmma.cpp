@@ -26,7 +26,8 @@ __half** im2col(__half *data, int data_n, int data_c, int data_h, int data_w, __
 
 int main() {
     int m = m_global, k = k_global, n = n_global;
-    __half **ret = read_bin(m, n, k)
+    float **aa = read_bin(m, n, k);
+    __half **ret = convert(aa, m, n, k);
     __half *hA = ret[0];
     __half *hB = ret[1];
     __half *hC = ret[2];
@@ -42,7 +43,7 @@ int main() {
 
 }
 
-int main() {
+int main2() {
     int data_n = data_n_global, data_c = data_c_global, data_w = data_w_global, data_h = data_h_global;
     int data_size = data_n * data_c * data_w * data_h;
     int kernel_n = kernel_n_global, kernel_c = kernel_c_global, kernel_w = kernel_w_global, kernel_h = kernel_h_global;
