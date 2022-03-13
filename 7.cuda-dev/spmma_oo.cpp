@@ -473,8 +473,8 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
     cudaStream_t                   stream = nullptr;
     CHECK_CUSPARSE( cusparseLtInit(&handle) )
     // matrix descriptor initialization
-    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order) )
     CHECK_CUSPARSE( cusparseLtStructuredDescriptorInit(&handle, &matB, k, n, ldb, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
+    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order) )
     CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matC, m, n, ldc, alignment, type, order) )
     // matmul, algorithm selection, and plan initialization
     CHECK_CUSPARSE( cusparseLtMatmulDescriptorInit( &handle, &matmul, opA, opB, &matA, &matB, &matC, &matC, compute_type) )
