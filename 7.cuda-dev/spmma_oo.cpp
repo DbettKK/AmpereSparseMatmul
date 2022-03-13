@@ -522,31 +522,31 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         cout << "B: " << endl;
         param->print_matrix(param->B, k, n);
         cout << "B_cmpr: " << endl;
-        param->print_matrix(matB_cmpr, k / 2, n);
-        CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
-        int is_valid;
-        CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
-        CHECK_CUDA( cudaStreamSynchronize(stream) )
-        if (is_valid != 0) {
-            std::printf("!!!! The matrix need to be pruned.\n");
-            //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
-        }
-        CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
-        CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
-        CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
-        __half *hB_compressed = new __half[compressed_size / sizeof(__half)];
-        CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
-        cout << "GPU_cmpr: " << endl;
-        for (int i = 0; i < compressed_size / sizeof(__half); i++) {
-            cout << hB_compressed[i] << " ";
-        }
-        cout << endl;
-
-        cout << "cs: " << compressed_size << endl;
-        cout << "me,cs: " << k * n / 2 * sizeof(__half) << endl;
-//        compressed_size = k * n * sizeof(__half);
+//        param->print_matrix(matB_cmpr, k / 2, n);
+//        CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
+//        int is_valid;
+//        CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
+//        CHECK_CUDA( cudaStreamSynchronize(stream) )
+//        if (is_valid != 0) {
+//            std::printf("!!!! The matrix need to be pruned.\n");
+//            //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+//        }
+//        CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
 //        CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
-//        CHECK_CUDA( cudaMemcpy(dB_compressed, matB_cmpr, compressed_size, cudaMemcpyHostToDevice) )
+//        CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
+//        __half *hB_compressed = new __half[compressed_size / sizeof(__half)];
+//        CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+//        cout << "GPU_cmpr: " << endl;
+//        for (int i = 0; i < compressed_size / sizeof(__half); i++) {
+//            cout << hB_compressed[i] << " ";
+//        }
+//        cout << endl;
+//
+//        cout << "cs: " << compressed_size << endl;
+//        cout << "me,cs: " << k * n / 2 * sizeof(__half) << endl;
+        compressed_size = k * n * sizeof(__half);
+        CHECK_CUDA( cudaMalloc((void**) &dB_compressed, 512) )
+        CHECK_CUDA( cudaMemcpy(dB_compressed, matB_cmpr, 512, cudaMemcpyHostToDevice) )
     }
     //--------------------------------------------------------------------------
 
