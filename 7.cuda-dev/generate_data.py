@@ -14,7 +14,7 @@ def make_zero_mat(row, col, dtype):
 
 def make_sparse_mat(row, col, dtype):
     # randint 左右闭区间
-    a = np.random.randint(1, 5, (row, col)).astype(dtype)
+    a = np.random.randint(1, 20, (row, col)).astype(dtype)
     for i in range(row):
         for j in range(col // 4):
             i1 = random.randint(0, 3)
