@@ -5,6 +5,7 @@
 #include<cstdio>
 #include<cstring>       // memset
 #include<cstdlib>       // malloc
+#include<cmath>
 
 #include<cuda_fp16.h>
 #include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
@@ -165,7 +166,7 @@ struct MatrixParam {
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 int pos = i * n + j;
-                if (D[pos] - cpu[pos] > 0.0001) {
+                if (abs(D[pos] - cpu[pos]) > 0.0001) {
                     cnt++;
                 }
             }
