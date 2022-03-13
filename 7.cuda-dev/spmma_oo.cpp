@@ -507,17 +507,23 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
     } else {
         //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
-        int m_compressed_size = k * n / 2 * sizeof(__half);
-        cout << "m_compressed_size:" << m_compressed_size << endl;
 
         CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
-         cout << "compressed_size:" << compressed_size << endl;
         CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
         CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
 
-        __half *newB = new __half[compressed_size / sizeof(__half)];
-        CHECK_CUDA( cudaMemcpy(newB, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
-        param->print_matrix(newB, k, n);
+        // print to check
+        __half *hB_compressed = new __half[compressed_size];
+        __half *hB_tmp = new __half[k * n];
+        CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+        CHECK_CUDA( cudaMemcpy(hB_tmp, dB, k * n * sizeof(__half), cudaMemcpyDeviceToHost) )
+        printf("================================================\n");
+        printf("compressed_size: %d\n", compressed_size / sizeof(__half));
+        printf("hB: \n");
+        param->print_matrix(hB_tmp, k, n);
+        printf("hB_compressed: \n");
+        param->print_matrix(hB_compressed, k, compressed_size / sizeof(__half) / k / 2);
+        printf("================================================\n");
 
 
         //CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
@@ -525,18 +531,7 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
     }
     //--------------------------------------------------------------------------
 
-    // print to check
-//    __half *hB_compressed = new __half[compressed_size];
-//    __half *hB_tmp = new __half[k * n];
-//    CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
-//    CHECK_CUDA( cudaMemcpy(hB_tmp, dB, k * n * sizeof(__half), cudaMemcpyDeviceToHost) )
-//    printf("================================================\n");
-//    printf("compressed_size: %d\n", compressed_size / sizeof(__half));
-//    printf("hB: \n");
-//    print_matrix(hB_tmp, k, n);
-//    printf("hB_compressed: \n");
-//    print_matrix(hB_compressed, k, compressed_size / sizeof(__half) / k / 2);
-//    printf("================================================\n");
+
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Search the best kernel
