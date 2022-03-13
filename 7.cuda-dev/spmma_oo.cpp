@@ -613,7 +613,7 @@ void test_conv() {
 }
 
 int main() {
-    test_gemm(16, 8, 16);
+    test_gemm(16, 16, 8);
 }
 
 
