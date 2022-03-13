@@ -578,8 +578,11 @@ void test_gemm(int m, int k, int n) {
     MatrixParam *param = new MatrixParam(m, k, n);
     param->D = new __half[m * n];
     __half *cmpr = param->generate_sparse_cmpr(5);
+    param->print_all();
+    printf("cmpr:\n");
+    param->print_matrix(cmpr, k / 2, n);
     MatrixParam *ans = spmma_matmul(param, cmpr);
-    ans->check_correct();
+    //ans->check_correct();
 }
 
 void test_conv() {
@@ -592,7 +595,7 @@ void test_conv() {
 }
 
 int main() {
-    test_gemm(14, 12, 5);
+    test_gemm(16, 8, 16);
 }
 
 
