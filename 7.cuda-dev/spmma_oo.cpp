@@ -40,6 +40,7 @@ const spmmaStatus_t ERROR = 2;
 const spmmaStatus_t UNSUPPORTED = 3;
 
 struct Tensor4d;
+struct ConvParam;
 
 struct MatrixParam {
     __half *A, *B, *C, *D;
@@ -181,10 +182,10 @@ struct MatrixParam {
 
         ifstream a_fs(matA_path, ios_base::binary);
         a_fs.read((char *)matA, m * k * sizeof(float));
-        ifstream a_fs(matB_path, ios_base::binary);
-        a_fs.read((char *)matB, k * n * sizeof(float));
-        ifstream a_fs(matC_path, ios_base::binary);
-        a_fs.read((char *)matC, m * n * sizeof(float));
+        ifstream b_fs(matB_path, ios_base::binary);
+        b_fs.read((char *)matB, k * n * sizeof(float));
+        ifstream c_fs(matC_path, ios_base::binary);
+        c_fs.read((char *)matC, m * n * sizeof(float));
 
         if (A == nullptr)  A = new __half[m * k];
         if (B == nullptr)  B = new __half[k * n];
