@@ -606,10 +606,7 @@ void test_gemm(int m, int k, int n) {
     MatrixParam *param = new MatrixParam(m, k, n);
     param->D = new __half[m * n];
     memset(param->D, 0, m * n * sizeof(__half));
-    __half *cmpr = param->generate_sparse_cmpr(5);
-    param->print_all();
-    printf("cmpr:\n");
-    param->print_matrix(cmpr, k / 2, n);
+    param->read_bin("a.bin", "b.bin", "c.bin");
     MatrixParam *ans = spmma_matmul(param, nullptr);
     //ans->check_correct();
 }
