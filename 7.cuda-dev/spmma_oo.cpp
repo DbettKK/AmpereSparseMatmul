@@ -497,6 +497,10 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
             std::printf("!!!! The matrix need to be pruned.\n");
             CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
         }
+        // 需要把prune后的b拿出来
+        __half *newB = new __half[k * n];
+        CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
+        param->B = newB;
         // Compress the A matrix
         CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
         CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
