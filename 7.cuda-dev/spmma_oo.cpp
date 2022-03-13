@@ -40,6 +40,49 @@ const spmmaStatus_t DO_NOTHING = 1;
 const spmmaStatus_t ERROR = 2;
 const spmmaStatus_t UNSUPPORTED = 3;
 
+struct Tensor4d {
+    __half *tensor;
+    int n, c, h, w;
+    Tensor4d(__half *tensor, int n, int c, int h, int w): tensor(tensor), n(n), c(c), h(h), w(w) {}
+    Tensor4d(int n, int c, int h, int w): tensor(nullptr), n(n), c(c), h(h), w(w) {}
+
+    int get_size() {
+        return n * c * h * w;
+    }
+
+    void print_tensor() {
+        for (int i = 0; i < n; i++) {
+            cout << "n" << i << ": " << endl;
+            for (int j = 0; j < c; j++) {
+                cout << "c" << j << ": " << endl;
+                for (int k = 0; k < h; k++) {
+                    for (int v = 0; v < w; v++) {
+                        cout << tensor[i * c * h * w + j * h * w + k * w + v] << " ";
+                    }
+                }
+            }
+        }
+        cout << endl;
+    }
+
+    void read_bin(string path) {
+        float *bin_file = new float[get_size()];
+        ifstream a_fs(path, ios_base::binary);
+        a_fs.read((char *)bin_file, get_size() * sizeof(float));
+        if (tensor == nullptr) tensor = new __half[get_size()];
+        for (int i = 0; i < get_size(); i++) {
+            tensor[i] = static_cast<__half>(bin_file[i]);
+        }
+    }
+
+    void generate_rand(int bound) {
+        if (tensor == nullptr) tensor = new __half[get_size()];
+        for (int i = 0; i < get_size(); i++) {
+            tensor[i] = static_cast<__half>(static_cast<float>(rand() % bound));
+        }
+    }
+};
+
 struct MatrixParam {
     __half *A, *B, *C, *D;
     int m, k, n;
@@ -124,22 +167,21 @@ struct MatrixParam {
         return new MatrixParam(A, B, C, ret, m, k, n);
     }
 
-//    Tensor4d *im2col_rev(ConvParam *param) {
-//        int out_h = param->getOut_height(), out_w = param->getOut_width();
-//        __half *ret = new __half[param->data->n * param->kernel->n * out_h * out_w];
-//
-//        int cnt = 0;
-//        for (int i = 0; i < param->data->n; i++) {
-//            for (int j = 0; j < param->kernel->n; j++) {
-//                int cnt_in = 0;
-//                for (int v = 0; v < out_h * out_w; v++) {
-//                    ret[cnt++] = D[(i * out_h * out_w + v) * param->kernel->n + j];
-//                }
-//            }
-//        }
-//
-//        return new Tensor4d(ret, param->data->n, param->kernel->n, out_h, out_w);
-//    }
+    Tensor4d *im2col_rev(int data_n, int kernel_n, int out_h, out_w) {
+        __half *ret = new __half[data_n * kernel_n * out_h * out_w];
+
+        int cnt = 0;
+        for (int i = 0; i < data_n; i++) {
+            for (int j = 0; j < kernel_n; j++) {
+                int cnt_in = 0;
+                for (int v = 0; v < out_h * out_w; v++) {
+                    ret[cnt++] = D[(i * out_h * out_w + v) * kernel_n + j];
+                }
+            }
+        }
+
+        return new Tensor4d(ret, data_n, kernel_n, out_h, out_w);
+    }
 
     bool check_correct() {
         // cpu
@@ -221,7 +263,6 @@ struct MatrixParam {
     }
 
     __half* generate_sparse_cmpr(int bound) {
-        int ret_cnt = 0;
         __half *ret = new __half[k * n / 2];
         if (A == nullptr)  A = new __half[m * k];
         if (B == nullptr)  B = new __half[k * n];
@@ -230,59 +271,18 @@ struct MatrixParam {
         for (int i = 0; i < m * k; i++) {
             A[i] = static_cast<__half>(static_cast<float>(rand() % bound));
         }
-        for (int i = 0; i < k * n; i+=2) {
-            int zero_index = rand() % 2;
-            B[i + zero_index] = static_cast<__half>(static_cast<float>(rand() % bound));
-            B[i + 1 - zero_index] = static_cast<__half>(static_cast<float>(0));
-            ret[ret_cnt++] = B[i + zero_index];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < k; j+=2) {
+                int zero_index = rand() % 2;
+                B[(j + zero_index) * n + i] = static_cast<__half>(static_cast<float>(rand() % bound));
+                B[(j + 1 - zero_index) * n + i] = B[(j + 1 - zero_index) * n + i] = static_cast<__half>(static_cast<float>(0));
+                ret[j / 2 * n + i] = B[(j + zero_index) * n + i];
+            }
         }
         for (int i = 0; i < m * n; i++) {
             C[i] = static_cast<__half>(static_cast<float>(0));
         }
         return ret;
-    }
-};
-
-struct Tensor4d {
-    __half *tensor;
-    int n, c, h, w;
-    Tensor4d(__half *tensor, int n, int c, int h, int w): tensor(tensor), n(n), c(c), h(h), w(w) {}
-    Tensor4d(int n, int c, int h, int w): tensor(nullptr), n(n), c(c), h(h), w(w) {}
-
-    int get_size() {
-        return n * c * h * w;
-    }
-
-    void print_tensor() {
-        for (int i = 0; i < n; i++) {
-            cout << "n" << i << ": " << endl;
-            for (int j = 0; j < c; j++) {
-                cout << "c" << j << ": " << endl;
-                for (int k = 0; k < h; k++) {
-                    for (int v = 0; v < w; v++) {
-                        cout << tensor[i * c * h * w + j * h * w + k * w + v] << " ";
-                    }
-                }
-            }
-        }
-        cout << endl;
-    }
-
-    void read_bin(string path) {
-        float *bin_file = new float[get_size()];
-        ifstream a_fs(path, ios_base::binary);
-        a_fs.read((char *)bin_file, get_size() * sizeof(float));
-        if (tensor == nullptr) tensor = new __half[get_size()];
-        for (int i = 0; i < get_size(); i++) {
-            tensor[i] = static_cast<__half>(bin_file[i]);
-        }
-    }
-
-    void generate_rand(int bound) {
-        if (tensor == nullptr) tensor = new __half[get_size()];
-        for (int i = 0; i < get_size(); i++) {
-            tensor[i] = static_cast<__half>(static_cast<float>(rand() % bound));
-        }
     }
 };
 
@@ -519,28 +519,9 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         param->print_matrix(hB_compressed, k, n);
         printf("================================================\n");
     } else {
-        //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
-
-        CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
+        compressed_size = k * n / 2 * sizeof(__half);
         CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
-        CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
-
-        // print to check
-        __half *hB_compressed = new __half[compressed_size];
-        __half *hB_tmp = new __half[k * n];
-        CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
-        CHECK_CUDA( cudaMemcpy(hB_tmp, dB, k * n * sizeof(__half), cudaMemcpyDeviceToHost) )
-        printf("================================================\n");
-        printf("compressed_size: %d\n", compressed_size / sizeof(__half));
-        printf("hB: \n");
-        param->print_matrix(hB_tmp, k, n);
-        printf("hB_compressed: \n");
-        param->print_matrix(hB_compressed, k, n / 2);
-        printf("================================================\n");
-
-
-        //CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
-        //CHECK_CUDA( cudaMemcpy(dB_compressed, matB_cmpr, compressed_size, cudaMemcpyHostToDevice) )
+        CHECK_CUDA( cudaMemcpy(dB_compressed, matB_cmpr, compressed_size, cudaMemcpyHostToDevice) )
     }
     //--------------------------------------------------------------------------
 
@@ -585,6 +566,10 @@ MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
         param->C = new __half[param->m * param->n];
         memset(param->C, 0, param->m * param->n * sizeof(__half));
     }
+    if (param->D == nullptr) {
+        param->D = new __half[param->m * param->n];
+        memset(param->D, 0, param->m * param->n * sizeof(__half));
+    }
     MatrixParam *out = param->fix_matrix();
 
     // 2.calculate
@@ -606,12 +591,10 @@ Tensor4d *spmma_conv(ConvParam *param) {
 
 void test_gemm(int m, int k, int n) {
     MatrixParam *param = new MatrixParam(m, k, n);
-    param->D = new __half[m * n];
-    memset(param->D, 0, m * n * sizeof(__half));
-
-    param->read_bin("a.bin", "b.bin", "c.bin");
-    param->print_matrix(param->B, k, n);
-    MatrixParam *ans = spmma_matmul(param, nullptr);
+    __half *cmpr = param->generate_sparse_cmpr(5);
+    MatrixParam *ans = spmma_matmul(param, cmpr);
+    //ans->check_correct();
+    // compress b的时候 是反过来的
     //ans->check_correct();
 }
 

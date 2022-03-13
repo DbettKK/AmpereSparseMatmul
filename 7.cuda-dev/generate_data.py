@@ -12,22 +12,38 @@ def make_zero_mat(row, col, dtype):
     return np.zeros(row * col).reshape(row, col).astype(dtype)
 
 
-def make_sparse_mat(row, col, dtype):
-    # randint 左右闭区间
-    a = np.random.randint(1, 20, (row, col)).astype(dtype)
-    for i in range(row):
-        for j in range(col // 4):
-            i1 = random.randint(0, 3)
-            i2 = random.randint(0, 3)
-            while i2 == i1:
+def make_sparse_mat(row, col, isMatB, dtype):
+    if not isMatB:
+        # randint 左右闭区间
+        a = np.random.randint(1, 20, (row, col)).astype(dtype)
+        for i in range(row):
+            for j in range(col // 4):
+                i1 = random.randint(0, 3)
                 i2 = random.randint(0, 3)
-            a[i, j * 4 + i1] = 0
-            a[i, j * 4 + i2] = 0
-        # 防止像k = 11这种情况时导致A矩阵不够sparse
-        if col % 4 > 1:
-            i1 = random.randint(0, col % 4 - 1)
-            a[i, col - col % 4 + i1] = 0
-    return a
+                while i2 == i1:
+                    i2 = random.randint(0, 3)
+                a[i, j * 4 + i1] = 0
+                a[i, j * 4 + i2] = 0
+            # 防止像k = 11这种情况时导致A矩阵不够sparse
+            if col % 4 > 1:
+                i1 = random.randint(0, col % 4 - 1)
+                a[i, col - col % 4 + i1] = 0
+        return a
+    else:
+        a = np.random.randint(1, 20, (col, row)).astype(dtype)
+        for i in range(col):
+            for j in range(row // 4):
+                i1 = random.randint(0, 3)
+                i2 = random.randint(0, 3)
+                while i2 == i1:
+                    i2 = random.randint(0, 3)
+                a[i, j * 4 + i1] = 0
+                a[i, j * 4 + i2] = 0
+            # 防止像k = 11这种情况时导致A矩阵不够sparse
+            if row % 4 > 1:
+                i1 = random.randint(0, row % 4 - 1)
+                a[i, row - row % 4 + i1] = 0
+        return a.T
 
 
 def get_compressed_mat(mat_a: np.ndarray):
@@ -124,7 +140,7 @@ def mma():
     m, n, k = 16, 16, 16
     dtype = 'float32'
     A = make_dense_mat(m, k, dtype)
-    B = make_sparse_mat(k, n, dtype)
+    B = make_sparse_mat(k, n, True, dtype)
     C = make_zero_mat(m, n, dtype)
     B_cmpr = get_compressed_mat(B)
     A.tofile('a.bin')
