@@ -25,6 +25,8 @@ struct MatrixParam {
     MatrixParam(__half *A=nullptr, __half *B=nullptr, __half *C=nullptr, __half *D=nullptr, int m=0, int k=0, int n=0):
         A(A), B(B), C(C), D(D), m(m), k(k), n(n) {}
 
+    MatrixParam(int m=0, int k=0, int n=0): A(nullptr), B(nullptr), C(nullptr), D(nullptr), m(m), k(k), n(n) {}
+
     void print_matrix(__half *item, int row, int col) {
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < col; j++) {
@@ -90,7 +92,7 @@ struct MatrixParam {
 
     MatrixParam *refix_matrix(int m_old, int n_old) {
         if (m_old == m && n_old == n) {
-            return D;
+            return this;
         }
         __half *ret = new __half[m_old * n_old];
         for (int i = 0; i < m_old; i++) {
@@ -135,6 +137,7 @@ struct MatrixParam {
             }
         }
         // diff
+        printf("check cpu with gpu:\n");
         int total = m * n, cnt = 0;
         printf("total: %d\n", total);
         for (int i = 0; i < m; i++) {
@@ -191,12 +194,35 @@ struct MatrixParam {
             C[i] = static_cast<__half>(static_cast<float>(rand() % bound));
         }
     }
+
+    __half* generate_sparse_cmpr(int bound) {
+        int ret_cnt = 0;
+        __half *ret = new __half[k * n / 2];
+        if (A == nullptr)  A = new __half[m * k];
+        if (B == nullptr)  B = new __half[k * n];
+        if (C == nullptr)  C = new __half[m * n];
+
+        for (int i = 0; i < m * k; i++) {
+            A[i] = static_cast<__half>(static_cast<float>(rand() % bound));
+        }
+        for (int i = 0; i < k * n; i+=2) {
+            int zero_index = rand() % 2;
+            B[i + zero_index] = static_cast<__half>(static_cast<float>(rand() % bound));
+            B[i + 1 - zero_index] = static_cast<__half>(static_cast<float>(0));
+            ret[ret_cnt++] = B[i + zero_index];
+        }
+        for (int i = 0; i < m * n; i++) {
+            C[i] = static_cast<__half>(static_cast<float>(0));
+        }
+        return ret;
+    }
 };
 
 struct Tensor4d {
     __half *tensor;
     int n, c, h, w;
     Tensor4d(__half *tensor, int n, int c, int h, int w): tensor(tensor), n(n), c(c), h(h), w(w) {}
+    Tensor4d(int n, int c, int h, int w): tensor(nullptr), n(n), c(c), h(h), w(w) {}
 
     int get_size() {
         return n * c * h * w;
@@ -204,17 +230,17 @@ struct Tensor4d {
 
     void print_tensor() {
         for (int i = 0; i < n; i++) {
+            cout << "n" << i << ": " << endl;
             for (int j = 0; j < c; j++) {
+                cout << "c" << j << ": " << endl;
                 for (int k = 0; k < h; k++) {
                     for (int v = 0; v < w; v++) {
                         cout << tensor[i * c * h * w + j * h * w + k * w + v] << " ";
                     }
-                    cout << endl;
                 }
-                cout << endl;
             }
-            cout << endl;
         }
+        cout << endl;
     }
 
     void read_bin(string path) {
@@ -378,9 +404,6 @@ spmmaStatus_t check_gpu() {
     }
 }
 
-// todo: tile还未考虑
-// todo: cpu时间的考虑
-
 spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
     __half *hA = param->A;
     __half *hB = param->B;
@@ -531,3 +554,27 @@ Tensor4d *spmma_conv(ConvParam *param) {
     return ret;
 }
 
+void test_gemm(int m, int k, int n) {
+    MatrixParam *param = new MatrixParam(m, k, n);
+    __half *cmpr = param->generate_sparse_cmpr(5);
+    MatrixParam *ans = spmma_matmul(param, cmpr);
+    ans->check_correct();
+}
+
+void test_conv() {
+    Tensor4d *data = new Tensor4d(1, 1, 6, 6);
+    Tensor4d *kernel = new Tensor4d(2, 3, 3, 3);
+    data->generate_rand(5);
+    kernel->generate_rand(3);
+    Tensor4d *ans = spmma_conv(new ConvParam(data, kernel, 0, 1));
+    ans->print_tensor();
+}
+
+int main() {
+    test_gemm(14, 12, 5);
+}
+
+
+
+// todo: tile还未考虑
+// todo: cpu时间的考虑
