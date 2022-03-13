@@ -41,6 +41,7 @@ const spmmaStatus_t UNSUPPORTED = 3;
 
 struct Tensor4d;
 struct ConvParam;
+struct MatrixParam;
 
 struct MatrixParam {
     __half *A, *B, *C, *D;
