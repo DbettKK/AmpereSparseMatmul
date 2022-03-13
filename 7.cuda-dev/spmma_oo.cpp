@@ -495,7 +495,7 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         CHECK_CUDA( cudaStreamSynchronize(stream) )
         if (is_valid != 0) {
             std::printf("!!!! The matrix need to be pruned.\n");
-            //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+            CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
         }
         // 需要把prune后的b拿出来
         __half *newB = new __half[k * n];
