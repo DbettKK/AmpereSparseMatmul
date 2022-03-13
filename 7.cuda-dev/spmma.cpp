@@ -69,12 +69,12 @@ int main2() {
     cout << endl;
     __half* hD = expose(hA, hB, hC, m, n, k);
     //__half** rev = im2col_rev(hD, data_n, data_c, data_h, data_w, kernel_n, kernel_c, kernel_h, kernel_w, padding, stride);
-    for (int i = 0; i < data_n; i++) {
-        for (int j = 0; j < kernel_n; j++) {
-            printf("================\n");
-            print_matrix(rev[i * kernel_n + j], out_h, out_w);
-        }
-    }
+//    for (int i = 0; i < data_n; i++) {
+//        for (int j = 0; j < kernel_n; j++) {
+//            printf("================\n");
+//            print_matrix(rev[i * kernel_n + j], out_h, out_w);
+//        }
+//    }
 }
 
 int check_gpu() {
