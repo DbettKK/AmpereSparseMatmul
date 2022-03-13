@@ -583,6 +583,7 @@ void test_gemm(int m, int k, int n) {
     printf("cmpr:\n");
     param->print_matrix(cmpr, k / 2, n);
     MatrixParam *ans = spmma_matmul(param, cmpr);
+    ans->print_matrix(ans->D, m, n);
     //ans->check_correct();
 }
 
