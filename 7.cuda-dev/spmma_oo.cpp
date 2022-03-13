@@ -39,49 +39,6 @@ const spmmaStatus_t DO_NOTHING = 1;
 const spmmaStatus_t ERROR = 2;
 const spmmaStatus_t UNSUPPORTED = 3;
 
-struct Tensor4d {
-    __half *tensor;
-    int n, c, h, w;
-    Tensor4d(__half *tensor, int n, int c, int h, int w): tensor(tensor), n(n), c(c), h(h), w(w) {}
-    Tensor4d(int n, int c, int h, int w): tensor(nullptr), n(n), c(c), h(h), w(w) {}
-
-    int get_size() {
-        return n * c * h * w;
-    }
-
-    void print_tensor() {
-        for (int i = 0; i < n; i++) {
-            cout << "n" << i << ": " << endl;
-            for (int j = 0; j < c; j++) {
-                cout << "c" << j << ": " << endl;
-                for (int k = 0; k < h; k++) {
-                    for (int v = 0; v < w; v++) {
-                        cout << tensor[i * c * h * w + j * h * w + k * w + v] << " ";
-                    }
-                }
-            }
-        }
-        cout << endl;
-    }
-
-    void read_bin(string path) {
-        float *bin_file = new float[get_size()];
-        ifstream a_fs(path, ios_base::binary);
-        a_fs.read((char *)bin_file, get_size() * sizeof(float));
-        if (tensor == nullptr) tensor = new __half[get_size()];
-        for (int i = 0; i < get_size(); i++) {
-            tensor[i] = static_cast<__half>(bin_file[i]);
-        }
-    }
-
-    void generate_rand(int bound) {
-        if (tensor == nullptr) tensor = new __half[get_size()];
-        for (int i = 0; i < get_size(); i++) {
-            tensor[i] = static_cast<__half>(static_cast<float>(rand() % bound));
-        }
-    }
-};
-
 struct MatrixParam {
     __half *A, *B, *C, *D;
     int m, k, n;
@@ -222,10 +179,10 @@ struct MatrixParam {
 
         ifstream a_fs(matA_path, ios_base::binary);
         a_fs.read((char *)matA, m * k * sizeof(float));
-        ifstream b_fs(matB_path, ios_base::binary);
-        b_fs.read((char *)matB, k * n * sizeof(float));
-        ifstream c_fs(matC_path, ios_base::binary);
-        c_fs.read((char *)matC, m * n * sizeof(float));
+        ifstream a_fs(matB_path, ios_base::binary);
+        a_fs.read((char *)matB, k * n * sizeof(float));
+        ifstream a_fs(matC_path, ios_base::binary);
+        a_fs.read((char *)matC, m * n * sizeof(float));
 
         if (A == nullptr)  A = new __half[m * k];
         if (B == nullptr)  B = new __half[k * n];
@@ -254,7 +211,7 @@ struct MatrixParam {
             B[i] = static_cast<__half>(static_cast<float>(rand() % bound));
         }
         for (int i = 0; i < m * n; i++) {
-            C[i] = static_cast<__half>(static_cast<float>(rand() % bound));
+            C[i] = static_cast<__half>(static_cast<float>(0));
         }
     }
 
@@ -278,6 +235,49 @@ struct MatrixParam {
             C[i] = static_cast<__half>(static_cast<float>(0));
         }
         return ret;
+    }
+};
+
+struct Tensor4d {
+    __half *tensor;
+    int n, c, h, w;
+    Tensor4d(__half *tensor, int n, int c, int h, int w): tensor(tensor), n(n), c(c), h(h), w(w) {}
+    Tensor4d(int n, int c, int h, int w): tensor(nullptr), n(n), c(c), h(h), w(w) {}
+
+    int get_size() {
+        return n * c * h * w;
+    }
+
+    void print_tensor() {
+        for (int i = 0; i < n; i++) {
+            cout << "n" << i << ": " << endl;
+            for (int j = 0; j < c; j++) {
+                cout << "c" << j << ": " << endl;
+                for (int k = 0; k < h; k++) {
+                    for (int v = 0; v < w; v++) {
+                        cout << tensor[i * c * h * w + j * h * w + k * w + v] << " ";
+                    }
+                }
+            }
+        }
+        cout << endl;
+    }
+
+    void read_bin(string path) {
+        float *bin_file = new float[get_size()];
+        ifstream a_fs(path, ios_base::binary);
+        a_fs.read((char *)bin_file, get_size() * sizeof(float));
+        if (tensor == nullptr) tensor = new __half[get_size()];
+        for (int i = 0; i < get_size(); i++) {
+            tensor[i] = static_cast<__half>(bin_file[i]);
+        }
+    }
+
+    void generate_rand(int bound) {
+        if (tensor == nullptr) tensor = new __half[get_size()];
+        for (int i = 0; i < get_size(); i++) {
+            tensor[i] = static_cast<__half>(static_cast<float>(rand() % bound));
+        }
     }
 };
 
