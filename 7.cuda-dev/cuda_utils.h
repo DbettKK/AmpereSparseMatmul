@@ -1,5 +1,5 @@
 #include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-#include<cusparseLt.h>       // cusparseLt header
+//#include<cusparseLt.h>       // cusparseLt header
 #include<cstdint>
 #include<cstdio>
 #include<cstring>
@@ -67,8 +67,8 @@ constexpr int EXIT_UNSUPPORTED = 2;
 const int padding_global = 0;
 const int stride_global = 1;
 
-const int data_n_global = 1, data_c_global = 1, data_w_global = 1024, data_h_global = 1024;
-const int kernel_n_global = 64, kernel_c_global = 1, kernel_w_global = 7, kernel_h_global = 7;
+const int data_n_global = 2, data_c_global = 3, data_w_global = 6, data_h_global = 6;
+const int kernel_n_global = 4, kernel_c_global = 3, kernel_w_global = 3, kernel_h_global = 3;
 
 const int out_w = (data_w_global + 2 * padding_global - kernel_w_global) / stride_global + 1;
 const int out_h = (data_h_global + 2 * padding_global - kernel_h_global) / stride_global + 1;
@@ -93,9 +93,9 @@ void print_matrix(__half *, int, int);
 
 void print_matrix(const int &m, const int &n, const float *A, const int &lda);
 
-void print_tensor(float *item, int n, int c, int w, int h);
+void print_tensor(float *item, int n, int c, int h, int w);
 
-void print_tensor(__half *item, int n, int c, int w, int h);
+void print_tensor(__half *item, int n, int c, int h, int w);
 
 void rand(__half *, int, int);
 
@@ -129,13 +129,13 @@ void print_matrix(const int &m, const int &n, const float *A, const int &lda) {
     }
 }
 
-void print_tensor(float *item, int n, int c, int w, int h) {
+void print_tensor(float *item, int n, int c, int h, int w) {
     if (n * c * w * h > 300) return;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < c; j++) {
-            for (int k = 0; k < w; k++) {
-                for (int v = 0; v < h; v++) {
-                    cout << item[i * c * w * h + j * w * h + k * h + v] << " ";
+            for (int k = 0; k < h; k++) {
+                for (int v = 0; v < w; v++) {
+                    cout << item[i * c * w * h + j * w * h + k * w + v] << " ";
                 }
                 cout << endl;
             }
@@ -145,13 +145,13 @@ void print_tensor(float *item, int n, int c, int w, int h) {
     }
 }
 
-void print_tensor(__half *item, int n, int c, int w, int h) {
+void print_tensor(__half *item, int n, int c, int h, int w) {
     if (n * c * w * h > 300) return;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < c; j++) {
-            for (int k = 0; k < w; k++) {
-                for (int v = 0; v < h; v++) {
-                    cout << item[i * c * w * h + j * w * h + k * h + v] << " ";
+            for (int k = 0; k < h; k++) {
+                for (int v = 0; v < w; v++) {
+                    cout << item[i * c * w * h + j * w * h + k * w + v] << " ";
                 }
                 cout << endl;
             }
@@ -171,7 +171,7 @@ void rand(__half *item, int m, int n) {
 
 __half *gemm_cpu(__half *A, __half *B, int m, int n, int k) {
     __half *ret = (__half *)malloc(sizeof(__half) * m * n);
-    memset(ret, 0, sizeof(m * n));
+    memset(ret, 0, sizeof(__half) * m * n);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             float sum  = 0.0f;
@@ -198,11 +198,6 @@ float **read_bin(int data_size, int kernel_size) {
     ifstream b_fs(kernel_path, ios_base::binary);
     b_fs.read((char *)kernel, kernel_size);
 
-    for (int i = 0; i < data_size / sizeof(float); i++) {
-        cout << data[i] << " ";
-    }
-    cout << endl;
-
     ret[0] = data;
     ret[1] = kernel;
     return ret;
@@ -226,7 +221,7 @@ float **read_bin(int m, int n, int k) {
     return ret;
 }
 
-__half **read_bin(int data_size, int kernel_size, int flag) {
+__half **read_bin(int data_size, int kernel_size, bool flag) {
     __half **ret = (__half **)malloc(sizeof(__half *) * 2);
     float *data = (float *)malloc(data_size * sizeof(float));
     float *kernel = (float *)malloc(kernel_size * sizeof(float));
@@ -259,24 +254,24 @@ __half *im2col_data(__half *data, int n, int c, int h, int w, int kernel_h, int 
 
     // padding
     int data_h_pad = h + padding * 2, data_w_pad = w + padding * 2;
-    int *data_pad = (int *)malloc(n * c * data_h_pad * data_w_pad * sizeof(int));
+    __half *data_pad = (__half *)malloc(n * c * data_h_pad * data_w_pad * sizeof(__half));
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < c; j++) {
             int index1 = i * c * data_h_pad * data_w_pad + j * data_h_pad * data_w_pad;
             for (int ki = 0; ki < padding; ki++) {
                 for (int v = 0; v < data_w_pad; v++) {
-                    data_pad[index1 + ki * data_w_pad + v] = 0;
+                    data_pad[index1 + ki * data_w_pad + v] = static_cast<__half>(static_cast<float>(0));
                 }
             }
             for (int ki = padding; ki < padding + h; ki++) {
                 for (int v = 0; v < data_w_pad; v++) {
-                    if (v < padding || v >= w + padding) data_pad[index1 + ki * data_w_pad + v] = 0;
+                    if (v < padding || v >= w + padding) data_pad[index1 + ki * data_w_pad + v] = static_cast<__half>(static_cast<float>(0));
                     else data_pad[index1 + ki * data_w_pad + v] = data[i * c * h * w + j * h * w + (ki - padding) * w + v - padding];
                 }
             }
             for (int ki = data_h_pad - padding; ki < data_h_pad; ki++) {
                 for (int v = 0; v < data_w_pad; v++) {
-                    data_pad[index1 + ki * data_w_pad + v] = 0;
+                    data_pad[index1 + ki * data_w_pad + v] = static_cast<__half>(static_cast<float>(0));
                 }
             }
         }
@@ -298,7 +293,7 @@ __half *im2col_data(__half *data, int n, int c, int h, int w, int kernel_h, int 
                     int row_num = i * stride, col_num = j * stride;
                     for (int ki = row_num; ki < row_num + kernel_h; ki++) {
                         for (int v = col_num; v < col_num + kernel_w; v++) {
-                            if (ki >= h || v >= w) A[cnt++] = 0;
+                            if (ki >= h || v >= w) A[cnt++] = static_cast<__half>(static_cast<float>(0));
                             else A[cnt++] = data[index_n + index_c + ki * w + v];
                         }
                     }
@@ -310,4 +305,27 @@ __half *im2col_data(__half *data, int n, int c, int h, int w, int kernel_h, int 
     printf("im2col: \n");
     print_matrix(A, n * out_h * out_w, c * kernel_h * kernel_w);
     return A;
+}
+
+__half *im2col_kernel(__half *kernel, int n, int c, int h, int w) {
+    __half *ret = (__half *)malloc(sizeof(__half) * n * c * h * w);
+    int k = c * h * w;
+    __half *tmp = (__half *)malloc(sizeof(__half) * n * k);
+    for (int i = 0; i < n; i++) {
+        int cnt = 0;
+        for (int j = 0; j < c; j++) {
+            for (int ki = 0; ki < h; ki++) {
+                for (int v = 0; v < w; v++) {
+                    tmp[i * k + cnt++] = kernel[i * c * h * w + j * h * w + ki * w + v];
+                }
+            }
+        }
+    }
+    int ret_cnt = 0;
+    for (int i = 0; i < k; i++) {
+        for (int j = 0; j < n; j++) {
+            ret[ret_cnt++] = tmp[j * k + i];
+        }
+    }
+    return ret;
 }

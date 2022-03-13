@@ -31,14 +31,15 @@ int main() {
     // input
     float *input = files[0];
     cout << "input: " << endl;
-    print_tensor(input, data_n, data_c, data_w, data_h);
+    print_tensor(input, data_n, data_c, data_h, data_w);
 
     cudnnTensorDescriptor_t input_descriptor;
     CHECK_CUDNN( cudnnCreateTensorDescriptor(&input_descriptor) )
     CHECK_CUDNN( cudnnSetTensor4dDescriptor(input_descriptor,
-                               CUDNN_TENSOR_NHWC,
+                               //CUDNN_TENSOR_NHWC,
+                               CUDNN_TENSOR_NCHW,
                                CUDNN_DATA_FLOAT,
-                               data_n, data_c, data_w, data_h) ) // n, c, w, h
+                               data_n, data_c, data_h, data_w) ) // n, c, h, w
 
 
     // kernel
@@ -50,7 +51,7 @@ int main() {
     CHECK_CUDNN( cudnnSetFilter4dDescriptor(kernel_descriptor,
                                CUDNN_DATA_FLOAT,
                                CUDNN_TENSOR_NCHW,
-                               kernel_n, kernel_c, kernel_w, kernel_h) )
+                               kernel_n, kernel_c, kernel_h, kernel_w) )
 
 
     // convolution descriptor
@@ -76,7 +77,8 @@ int main() {
     cudnnTensorDescriptor_t output_descriptor;
     CHECK_CUDNN( cudnnCreateTensorDescriptor(&output_descriptor) )
     CHECK_CUDNN( cudnnSetTensor4dDescriptor(output_descriptor,
-                               CUDNN_TENSOR_NHWC,
+                               //CUDNN_TENSOR_NHWC,
+                               CUDNN_TENSOR_NCHW,
                                CUDNN_DATA_FLOAT,
                                out_n, out_c, out_h, out_w) )
 
@@ -156,7 +158,7 @@ int main() {
     CHECK_CUDNN(cudnnDestroy(handle))
 
     cout << "output: " << endl;
-    print_tensor(output, out_n, out_c, out_w, out_h);
+    print_tensor(output, out_n, out_c, out_h, out_w);
 
     return 0;
 }

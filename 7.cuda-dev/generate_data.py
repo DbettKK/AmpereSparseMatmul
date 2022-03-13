@@ -136,7 +136,7 @@ def mma():
 
 if __name__ == '__main__':
     data_n, data_c, data_w, data_h = 2, 3, 6, 6
-    kernel_n, kernel_c, kernel_w, kernel_h = 1, 3, 3, 3
+    kernel_n, kernel_c, kernel_w, kernel_h = 4, 3, 3, 3
     padding = 0
     stride = 1
     dtype = 'float32'
@@ -151,11 +151,11 @@ if __name__ == '__main__':
     m = data_trans_w
     k = data_trans_h
     n = kernel_n
-    #print(data)
-    #rint(kernel)
+    print(data)
+    print(kernel)
     print(m, k, n)
-    #print(data_trans)
-    #print(kernel_trans)
+    print(data_trans)
+    print(kernel_trans)
 
     zero_matrix = make_zero_mat(m, n, dtype)
 
