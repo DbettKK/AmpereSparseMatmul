@@ -305,7 +305,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     auto compute_type = CUSPARSE_COMPUTE_16F;
 
     // device
-    __half *dA, *dB, *dC, *dD, *dB_compressed;
+    __half *dA, *dB, *dC, *dD, *dA_compressed;
     int *d_valid;
     CHECK_CUDA( cudaMalloc((void**) &dA, A_size) )
     CHECK_CUDA( cudaMalloc((void**) &dB, B_size) )
@@ -326,8 +326,8 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     cudaStream_t                   stream = nullptr;
     CHECK_CUSPARSE( cusparseLtInit(&handle) )
     // matrix descriptor initialization
-    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order) )
-    CHECK_CUSPARSE( cusparseLtStructuredDescriptorInit(&handle, &matB, k, n, ldb, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
+    CHECK_CUSPARSE( cusparseLtStructuredDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
+    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matB, k, n, ldb, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
     CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matC, m, n, ldc, alignment, type, order) )
     // matmul, algorithm selection, and plan initialization
     CHECK_CUSPARSE( cusparseLtMatmulDescriptorInit( &handle, &matmul, opA, opB, &matA, &matB, &matC, &matC, compute_type) )
@@ -342,9 +342,9 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     // Prune the A matrix (in-place) and check the correcteness
     // todo: 先check 再prune
     // todo: 测试自己compress的情况
-    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
     // 这一步可以省略 ↑
-    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
+    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
     int is_valid;
     CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
     CHECK_CUDA( cudaStreamSynchronize(stream) )
@@ -355,21 +355,21 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     //--------------------------------------------------------------------------
     // Compress the A matrix
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
+    CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
 
-    CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
+    CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
 
     // print to check
-    __half *hB_compressed = new __half[compressed_size];
-    __half *hB_tmp = new __half[k * n];
-    CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(hB_tmp, dB, k * n * sizeof(__half), cudaMemcpyDeviceToHost) )
+    __half *hA_compressed = new __half[compressed_size / sizeof(__half)];
+    __half *hA_tmp = new __half[m * k];
+    CHECK_CUDA( cudaMemcpy(hA_compressed, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(hA_tmp, dA, m * k * sizeof(__half), cudaMemcpyDeviceToHost) )
     printf("================================================\n");
     printf("compressed_size: %d\n", compressed_size / sizeof(__half));
-    printf("hB: \n");
-    print_matrix(hB_tmp, k, n);
-    printf("hB_compressed: \n");
-    print_matrix(hB_compressed, k, compressed_size / sizeof(__half) / k / 2);
+    printf("hA: \n");
+    print_matrix(hA_tmp, m, k);
+    printf("hA_compressed: \n");
+    print_matrix(hA_compressed, m, compressed_size / sizeof(__half) / k / 2);
     printf("================================================\n");
 
 
@@ -392,7 +392,7 @@ int calculate(__half *hA, __half *hB, __half *hC, __half *hD, int m, int n, int 
     */
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Perform the matrix multiplication
-    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA, dB_compressed, &beta, dC, dD, d_workspace, streams, num_streams) )
+    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // destroy plan and handle
     CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matA) )
