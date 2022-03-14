@@ -694,7 +694,7 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
     for (int i = 0; i < compressed_size / sizeof(__half); i++) {
         if (i < compressed_size / sizeof(__half) / 2) cmpr_new[i] = matA_cmpr[i];
         else {
-            cmpr_new[i] = hA_compressed[i];
+            cmpr_new[i] = 0;
             printf("%f | ", hA_compressed[i]);
 
             cout << hA_compressed[i] << " ";
