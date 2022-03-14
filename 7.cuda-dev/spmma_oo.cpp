@@ -690,11 +690,13 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
     __half *hA_compressed = new __half[compressed_size / sizeof(__half)];
     CHECK_CUDA( cudaMemcpy(hA_compressed, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
     __half *cmpr_new = new __half[compressed_size / sizeof(__half)];
-    memset(cmpr_new, -7096, compressed_size);
+    //memset(cmpr_new, -7096, compressed_size);
     for (int i = 0; i < compressed_size / sizeof(__half); i++) {
         if (i < compressed_size / sizeof(__half) / 2) cmpr_new[i] = matA_cmpr[i];
         else {
-            //cmpr_new[i] = hA_compressed[i];
+            cmpr_new[i] = hA_compressed[i];
+            printf("%f ", cmpr_new[i]);
+            cout << endl;
             cout << cmpr_new[i] << " ";
         }
     }
