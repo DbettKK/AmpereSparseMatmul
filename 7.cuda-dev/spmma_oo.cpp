@@ -727,6 +727,7 @@ MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
     // 2.calculate
     __mma_matmul(out, matB_cmpr);
 
+    out->print_matrix(out, out->m, out->n);
     // 3. compare with cpu
     out->check_correct();
 
