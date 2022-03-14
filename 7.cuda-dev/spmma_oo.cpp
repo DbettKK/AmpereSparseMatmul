@@ -131,9 +131,11 @@ struct MatrixParam {
         __half *A_new = new __half[(m + fix_m) * (k + fix_k)];
         __half *B_new = new __half[(k + fix_k) * (n + fix_n)];
         __half *C_new = new __half[(m + fix_m) * (n + fix_n)];
+        __half *D_new = new __half[(m + fix_m) * (n + fix_n)];
         memset(A_new, 0, (m + fix_m) * (k + fix_k) * sizeof(__half));
         memset(B_new, 0, (k + fix_k) * (n + fix_n) * sizeof(__half));
         memset(C_new, 0, (m + fix_m) * (n + fix_n) * sizeof(__half));
+        memset(D_new, 0, (m + fix_m) * (n + fix_n) * sizeof(__half));
         // padding
         int cnt_A = 0, cnt_B = 0, cnt_C = 0;
         for (int i = 0; i < m; i++) {
@@ -152,7 +154,7 @@ struct MatrixParam {
                 else B_new[cnt_B++] = static_cast<__half>(static_cast<float>(0));
             }
         }
-        return new MatrixParam(A_new, B_new, C_new, D, m + fix_m, k + fix_k, n + fix_n);
+        return new MatrixParam(A_new, B_new, C_new, D_new, m + fix_m, k + fix_k, n + fix_n);
     }
 
     MatrixParam *refix_matrix(int m_old, int n_old) {
@@ -723,7 +725,7 @@ MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
         param->D = new __half[param->m * param->n];
         memset(param->D, 0, param->m * param->n * sizeof(__half));
     }
-    param->print_matrix(param->D, param->m, param->n);
+
     MatrixParam *out = param->fix_matrix();
 
     out->print_all();
