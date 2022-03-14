@@ -52,9 +52,9 @@ struct Tensor4d {
 
     void print_tensor() {
         for (int i = 0; i < n; i++) {
-            cout << "n" << i << ": " << endl;
+            printf("n%d:\n", i);
             for (int j = 0; j < c; j++) {
-                cout << "c" << j << ": " << endl;
+                printf("c%d:\n", j);
                 for (int k = 0; k < h; k++) {
                     for (int v = 0; v < w; v++) {
                         cout << tensor[i * c * h * w + j * h * w + k * w + v] << " ";
