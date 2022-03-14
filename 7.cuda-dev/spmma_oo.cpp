@@ -695,7 +695,7 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
         if (i < compressed_size / sizeof(__half) / 2) cmpr_new[i] = matA_cmpr[i];
         else {
             //cmpr_new[i] = hA_compressed[i];
-            cout << /cmpr_new[i] << " ";
+            cout << cmpr_new[i] << " ";
         }
     }
     cout << endl;
