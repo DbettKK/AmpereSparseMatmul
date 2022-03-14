@@ -515,19 +515,20 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
     //--------------------------------------------------------------------------
     // Prune and Compress
 
-//    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
-//    int is_valid;
-//    CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
-//    CHECK_CUDA( cudaStreamSynchronize(stream) )
-//    if (is_valid != 0) {
-//        std::printf("!!!! The matrix need to be pruned.\n");
-//        CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
-//    }
+    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
+    int is_valid;
+    CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
+    CHECK_CUDA( cudaStreamSynchronize(stream) )
+    if (is_valid != 0) {
+        std::printf("!!!! The matrix need to be pruned.\n");
+        CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    }
 //    // 需要把prune后的b拿出来
-//    __half *newB = new __half[k * n];
-//    CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
-//    param->B = newB;
-//    // Compress the A matrix
+    __half *newB = new __half[k * n];
+    CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
+    param->B = newB;
+    // Compress the A matrix
+
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
     CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
     CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
