@@ -692,8 +692,12 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
     __half *cmpr_new = new __half[compressed_size / sizeof(__half)];
     for (int i = 0; i < compressed_size / sizeof(__half); i++) {
         if (i < compressed_size / sizeof(__half) / 2) cmpr_new[i] = matA_cmpr[i];
-        //else cmpr_new[i] = hA_compressed[i];
+        else {
+            cmpr_new[i] = hA_compressed[i];
+            cout << hA_compressed[i] << " ";
+        }
     }
+    cout << endl;
 //    cout << "GPU_cmpr: " << endl;
 //    for (int i = 0; i < compressed_size / sizeof(__half); i++) {
 //        cout << hA_compressed[i] << " ";
