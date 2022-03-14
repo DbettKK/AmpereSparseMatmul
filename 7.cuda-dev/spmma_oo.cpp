@@ -284,6 +284,29 @@ struct MatrixParam {
         }
         return ret;
     }
+
+    __half* generate_sparse_cmpr_A(int bound) {
+        int ret_cnt = 0;
+        __half *ret = new __half[m * k / 2];
+        if (A == nullptr)  A = new __half[m * k];
+        if (B == nullptr)  B = new __half[k * n];
+        if (C == nullptr)  C = new __half[m * n];
+
+        // 四个为一组 每一组如果前两个为0 则会忽略
+        for (int i = 0; i < m * k; i++) {
+            int zero_index = rand() % 2;
+            A[i + zero_index] = static_cast<__half>(static_cast<float>(rand() % bound + 1));
+            A[i + 1 - zero_index] = static_cast<__half>(static_cast<float>(0));
+            ret[ret_cnt++] = A[i + zero_index];
+        }
+        for (int i = 0; i < k * n; i++) {
+            B[i] = static_cast<__half>(static_cast<float>(rand() % bound));
+        }
+        for (int i = 0; i < m * n; i++) {
+            C[i] = static_cast<__half>(static_cast<float>(0));
+        }
+        return ret;
+    }
 };
 
 struct ConvParam {
@@ -519,6 +542,7 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
         param->print_matrix(hB_compressed, k, n);
         printf("================================================\n");
     } else {
+    // todo: 测试 matA情况下的cmprsize问题以及matA16816的速度
 //        cout << "B: " << endl;
 //        param->print_matrix(param->B, k, n);
 //        cout << "B_cmpr: " << endl;
@@ -584,6 +608,132 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
     return SUCCESS;
 }
 
+spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
+    __half *hA = param->A;
+    __half *hB = param->B;
+    __half *hC = param->C;
+
+    int m = param->m, k = param->k, n = param->n;
+
+    size_t A_size = m * k * sizeof(__half);
+    size_t B_size = k * n * sizeof(__half);
+    size_t C_size = m * n * sizeof(__half);
+
+    // Leading dimension 如果行优先则代表列数
+    int lda = k, ldb = n, ldc = n;
+    auto opA = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    auto opB = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    auto order = CUSPARSE_ORDER_ROW; // cusparseOrder_t
+    auto type  = CUDA_R_16F;
+    auto compute_type = CUSPARSE_COMPUTE_16F;
+    float alpha = 1.0f;
+    float beta  = 0.0f;
+    unsigned alignment = 16;
+
+    // device
+    __half *dA, *dB, *dC, *dD, *dA_compressed;
+    int *d_valid;
+    CHECK_CUDA( cudaMalloc((void**) &dA, A_size) )
+    CHECK_CUDA( cudaMalloc((void**) &dB, B_size) )
+    CHECK_CUDA( cudaMalloc((void**) &dC, C_size) )
+    CHECK_CUDA( cudaMalloc((void**) &d_valid, sizeof(d_valid)) )
+    dD = dC;
+    // 从host拷贝到device
+    CHECK_CUDA( cudaMemcpy(dA, hA, A_size, cudaMemcpyHostToDevice) )
+    CHECK_CUDA( cudaMemcpy(dB, hB, B_size, cudaMemcpyHostToDevice) )
+    CHECK_CUDA( cudaMemcpy(dC, hC, C_size, cudaMemcpyHostToDevice) )
+
+    //--------------------------------------------------------------------------
+    cusparseLtHandle_t             handle;
+    cusparseLtMatDescriptor_t      matA, matB, matC;
+    cusparseLtMatmulDescriptor_t   matmul;
+    cusparseLtMatmulAlgSelection_t alg_sel;
+    cusparseLtMatmulPlan_t         plan;
+    cudaStream_t                   stream = nullptr;
+    CHECK_CUSPARSE( cusparseLtInit(&handle) )
+    // matrix descriptor initialization
+    CHECK_CUSPARSE( cusparseLtStructuredDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
+    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matB, k, n, ldb, alignment, type, order) )
+    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matC, m, n, ldc, alignment, type, order) )
+    // matmul, algorithm selection, and plan initialization
+    CHECK_CUSPARSE( cusparseLtMatmulDescriptorInit( &handle, &matmul, opA, opB, &matA, &matB, &matC, &matC, compute_type) )
+    CHECK_CUSPARSE( cusparseLtMatmulAlgSelectionInit( &handle, &alg_sel, &matmul, CUSPARSELT_MATMUL_ALG_DEFAULT) )
+    int alg = 0;    // 算法
+    CHECK_CUSPARSE( cusparseLtMatmulAlgSetAttribute( &handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg, sizeof(alg)))
+
+    size_t workspace_size, compressed_size;
+    CHECK_CUSPARSE( cusparseLtMatmulGetWorkspace(&handle, &alg_sel, &workspace_size))
+
+    CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
+    //--------------------------------------------------------------------------
+
+    // Prune and Compress
+
+    // todo: 测试 matA情况下的cmprsize问题以及matA16816的速度
+    cout << "A: " << endl;
+    param->print_matrix(param->A, k, n);
+    cout << "A_cmpr: " << endl;
+    param->print_matrix(matA_cmpr, k / 2, n);
+
+    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
+    int is_valid;
+    CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
+    CHECK_CUDA( cudaStreamSynchronize(stream) )
+    if (is_valid != 0) {
+        std::printf("!!!! The matrix need to be pruned.\n");
+        //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    }
+    CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
+    CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
+    cout << compressed_size / sizeof(void) << endl;
+    CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
+    __half *hB_compressed = new __half[compressed_size / sizeof(__half)];
+    CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+    cout << "GPU_cmpr: " << endl;
+    for (int i = 0; i < compressed_size / sizeof(__half); i++) {
+        cout << hB_compressed[i] << " ";
+    }
+    cout << endl;
+
+    cout << "cs: " << compressed_size << endl;
+    cout << "me,cs: " << m * k / 2 * sizeof(__half) << endl;
+//    compressed_size = m * n * sizeof(__half);
+//    CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
+//    CHECK_CUDA( cudaMemcpyAsync(dB_compressed, matB_cmpr, compressed_size, cudaMemcpyHostToDevice, stream) )
+
+    //--------------------------------------------------------------------------
+
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Search the best kernel
+    void* d_workspace = nullptr;
+    int num_streams = 0;
+    cudaStream_t* streams = nullptr;
+    /*
+    int alg_id;
+    CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg_id, sizeof(alg_id)) )
+    printf("best alg: %d\n", alg_id);
+    */
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Perform the matrix multiplication
+    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // destroy plan and handle
+    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matA) )
+    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matB) )
+    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matC) )
+    CHECK_CUSPARSE( cusparseLtMatmulPlanDestroy(&plan) )
+    CHECK_CUSPARSE( cusparseLtDestroy(&handle) )
+    //--------------------------------------------------------------------------
+    // device result check
+    // matrix A has been pruned
+    CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(param->D, dD, C_size, cudaMemcpyDeviceToHost) )
+
+    return SUCCESS;
+}
 
 /* matmul with mma */
 /* matD -> OUT, matC/matA_cmpr -> alternative */
@@ -600,7 +750,7 @@ MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
     MatrixParam *out = param->fix_matrix();
 
     // 2.calculate
-    __mma_matmul(out, matB_cmpr);
+    __mma_matmul_A(out, matB_cmpr);
 
     // 3. compare with cpu
     out->check_correct();
@@ -618,7 +768,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
 
 void test_gemm(int m, int k, int n) {
     MatrixParam *param = new MatrixParam(m, k, n);
-    __half *cmpr = param->generate_sparse_cmpr(5);
+    __half *cmpr = param->generate_sparse_cmpr_A(5);
     MatrixParam *ans = spmma_matmul(param, cmpr);
     //ans->check_correct();
     // compress b的时候 是反过来的
