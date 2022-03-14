@@ -671,9 +671,9 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
 
     // todo: 测试 matA情况下的cmprsize问题以及matA16816的速度
     cout << "A: " << endl;
-    param->print_matrix(param->A, k, n);
+    param->print_matrix(param->A, m, k);
     cout << "A_cmpr: " << endl;
-    param->print_matrix(matA_cmpr, k / 2, n);
+    param->print_matrix(matA_cmpr, m / 2, k);
 
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
     int is_valid;
@@ -687,11 +687,11 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
     CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
     cout << compressed_size / sizeof(void) << endl;
     CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
-    __half *hB_compressed = new __half[compressed_size / sizeof(__half)];
-    CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+    __half *hA_compressed = new __half[compressed_size / sizeof(__half)];
+    CHECK_CUDA( cudaMemcpy(hA_compressed, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
     cout << "GPU_cmpr: " << endl;
     for (int i = 0; i < compressed_size / sizeof(__half); i++) {
-        cout << hB_compressed[i] << " ";
+        cout << hA_compressed[i] << " ";
     }
     cout << endl;
 
