@@ -293,7 +293,7 @@ struct MatrixParam {
         if (C == nullptr)  C = new __half[m * n];
 
         // 四个为一组 每一组如果前两个为0 则会忽略
-        for (int i = 0; i < m * k; i++) {
+        for (int i = 0; i < m * k; i+=2) {
             int zero_index = rand() % 2;
             A[i + zero_index] = static_cast<__half>(static_cast<float>(rand() % bound + 1));
             A[i + 1 - zero_index] = static_cast<__half>(static_cast<float>(0));
@@ -673,7 +673,7 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
     cout << "A: " << endl;
     param->print_matrix(param->A, m, k);
     cout << "A_cmpr: " << endl;
-    param->print_matrix(matA_cmpr, m / 2, k);
+    param->print_matrix(matA_cmpr, m, k / 2);
 
     CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dA, d_valid, stream) )
     int is_valid;
