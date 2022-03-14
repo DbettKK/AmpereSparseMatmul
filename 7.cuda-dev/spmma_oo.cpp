@@ -723,6 +723,7 @@ MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
         param->D = new __half[param->m * param->n];
         memset(param->D, 0, param->m * param->n * sizeof(__half));
     }
+    out->print_matrix(out->D, out->m, out->n);
     MatrixParam *out = param->fix_matrix();
 
     out->print_all();
