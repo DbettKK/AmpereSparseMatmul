@@ -59,6 +59,7 @@ struct Tensor4d {
                     for (int v = 0; v < w; v++) {
                         cout << tensor[i * c * h * w + j * h * w + k * w + v] << " ";
                     }
+                    printf("\n");
                 }
             }
         }
