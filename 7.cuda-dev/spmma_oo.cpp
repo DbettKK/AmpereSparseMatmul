@@ -724,10 +724,11 @@ MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
     }
     MatrixParam *out = param->fix_matrix();
 
+    out->print_all();
+
     // 2.calculate
     __mma_matmul(out, matB_cmpr);
 
-    out->print_matrix(out->D, out->m, out->n);
     // 3. compare with cpu
     out->check_correct();
 
@@ -754,8 +755,11 @@ void test_gemm(int m, int k, int n) {
 void test_conv() {
     Tensor4d *data = new Tensor4d(1, 1, 6, 6);
     Tensor4d *kernel = new Tensor4d(2, 3, 3, 3);
+
     data->generate_rand(5);
     kernel->generate_rand(3);
+    data->print_tensor();
+    kernel->print_tensor();
     Tensor4d *ans = spmma_conv(new ConvParam(data, kernel, 0, 1));
     ans->print_tensor();
 }
