@@ -717,7 +717,7 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
     */
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Perform the matrix multiplication
-    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_cmpr_new, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
+    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // destroy plan and handle
     CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matA) )
