@@ -683,12 +683,17 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
 //        std::printf("!!!! The matrix need to be pruned.\n");
 //        //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dA, dA, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
 //    }
-//    CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
-//    CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
-//    cout << compressed_size / sizeof(void) << endl;
-//    CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
-//    __half *hA_compressed = new __half[compressed_size / sizeof(__half)];
-//    CHECK_CUDA( cudaMemcpy(hA_compressed, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+    CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
+    CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
+    cout << compressed_size / sizeof(void) << endl;
+    CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
+    __half *hA_compressed = new __half[compressed_size / sizeof(__half)];
+    CHECK_CUDA( cudaMemcpy(hA_compressed, dA_compressed, compressed_size, cudaMemcpyDeviceToHost) )
+    __half *cmpr_new = new __half[compressed_size / sizeof(__half)];
+    for (int i = 0; i < compressed_size / sizeof(__half); i++) {
+        if (i < compressed_size / sizeof(__half) / 2) cmpr_new[i] = matA_cmpr[i];
+        else cmpr_new[i] = hA_compressed[i];
+    }
 //    cout << "GPU_cmpr: " << endl;
 //    for (int i = 0; i < compressed_size / sizeof(__half); i++) {
 //        cout << hA_compressed[i] << " ";
@@ -697,9 +702,10 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
 //
 //    cout << "cs: " << compressed_size << endl;
 //    cout << "me,cs: " << m * k / 2 * sizeof(__half) << endl;
-    compressed_size = m * k * sizeof(__half);
-    CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
-    CHECK_CUDA( cudaMemcpy(dA_compressed, matA_cmpr, compressed_size, cudaMemcpyHostToDevice) )
+//    compressed_size = m * k * sizeof(__half);
+    __half *dA_cmpr_new;
+    CHECK_CUDA( cudaMalloc((void**) &dA_cmpr_new, compressed_size) )
+    CHECK_CUDA( cudaMemcpy(dA_cmpr_new, cmpr_new, compressed_size, cudaMemcpyHostToDevice) )
 
     //--------------------------------------------------------------------------
 
@@ -717,7 +723,7 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
     */
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Perform the matrix multiplication
-    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
+    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_cmpr_new, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // destroy plan and handle
     CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matA) )
