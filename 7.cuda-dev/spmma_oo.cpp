@@ -626,7 +626,6 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
 
     // Prune and Compress
 
-    // todo: 测试 matA情况下的cmprsize问题以及matA16816的速度
     cout << "A: " << endl;
     param->print_matrix(param->A, m, k);
     cout << "A_cmpr: " << endl;
@@ -699,7 +698,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
     Tensor4d *ret = param->im2col_rev(refix);
     return ret;
 }
-
+// 5866
 void test_gemm(int m, int k, int n) {
     MatrixParam *param = new MatrixParam(m, k, n);
     __half *cmpr = param->generate_sparse_cmpr(5);
