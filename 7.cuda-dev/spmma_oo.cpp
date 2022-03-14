@@ -542,7 +542,6 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
 //    param->print_matrix(hB_compressed, k, n);
 //    printf("================================================\n");
 
-    // todo: 测试 matA情况下的cmprsize问题以及matA16816的速度
 //        cout << "B: " << endl;
 //        param->print_matrix(param->B, k, n);
 //        cout << "B_cmpr: " << endl;
@@ -761,7 +760,7 @@ void test_conv() {
 }
 
 int main() {
-    test_gemm(16, 16, 16);
+    test_conv();
 }
 
 
