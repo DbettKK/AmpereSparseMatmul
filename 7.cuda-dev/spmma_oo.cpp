@@ -455,7 +455,7 @@ spmmaStatus_t check_gpu() {
     }
 }
 
-spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
+spmmaStatus_t __mma_matmul(MatrixParam *param, bool isValid) {
     __half *hA = param->A;
     __half *hB = param->B;
     __half *hC = param->C;
@@ -514,72 +514,26 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, __half *matB_cmpr) {
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune and Compress
-
-    CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
-    int is_valid;
-    CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
-    CHECK_CUDA( cudaStreamSynchronize(stream) )
-    if (is_valid != 0) {
-        std::printf("!!!! The matrix need to be pruned.\n");
-        CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+    if (！isValid) {
+        // 不符合条件 需要进行压缩
+        CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
+        int is_valid;
+        CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
+        CHECK_CUDA( cudaStreamSynchronize(stream) )
+        if (is_valid != 0) {
+            std::printf("!!!! The matrix need to be pruned.\n");
+            CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
+        }
+        // 需要把prune后的b拿出来 和cpu比较需要用
+        __half *newB = new __half[k * n];
+        CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
+        param->B = newB;
     }
-//    // 需要把prune后的b拿出来
-    __half *newB = new __half[k * n];
-    CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
-    param->B = newB;
-    // Compress the A matrix
-
+    // 符合条件 不用判断 直接compress即可
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
     CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
     CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
-
-//    __half *hB_compressed = new __half[compressed_size / sizeof(__half)];
-//    __half *hB_tmp = new __half[k * n];
-//    CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
-//    CHECK_CUDA( cudaMemcpy(hB_tmp, dB, k * n * sizeof(__half), cudaMemcpyDeviceToHost) )
-//    printf("================================================\n");
-//    printf("compressed_size: %d\n", compressed_size / sizeof(__half));
-//    printf("%d\n", sizeof(__half));
-//    printf("hB: \n");
-//    param->print_matrix(hB_tmp, k, n);
-//    printf("hB_compressed: \n");
-//    param->print_matrix(hB_compressed, k, n);
-//    printf("================================================\n");
-
-//        cout << "B: " << endl;
-//        param->print_matrix(param->B, k, n);
-//        cout << "B_cmpr: " << endl;
-//        param->print_matrix(matB_cmpr, k / 2, n);
-
-//        CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
-//        int is_valid;
-//        CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
-//        CHECK_CUDA( cudaStreamSynchronize(stream) )
-//        if (is_valid != 0) {
-//            std::printf("!!!! The matrix need to be pruned.\n");
-//            //CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
-//        }
-//        CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
-//        CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
-//        cout << compressed_size / sizeof(void) << endl;
-//        CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
-//        __half *hB_compressed = new __half[compressed_size / sizeof(__half)];
-//        CHECK_CUDA( cudaMemcpy(hB_compressed, dB_compressed, compressed_size, cudaMemcpyDeviceToHost) )
-//        cout << "GPU_cmpr: " << endl;
-//        for (int i = 0; i < compressed_size / sizeof(__half); i++) {
-//            cout << hB_compressed[i] << " ";
-//        }
-//        cout << endl;
-//
-//        cout << "cs: " << compressed_size << endl;
-//        cout << "me,cs: " << k * n / 2 * sizeof(__half) << endl;
-//        compressed_size = k * n * sizeof(__half);
-//        CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
-//        CHECK_CUDA( cudaMemcpyAsync(dB_compressed, matB_cmpr, compressed_size, cudaMemcpyHostToDevice, stream) )
-
     //--------------------------------------------------------------------------
-
-
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Search the best kernel
@@ -716,7 +670,7 @@ spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
 
 /* matmul with mma */
 /* matD -> OUT, matC/matA_cmpr -> alternative */
-MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
+MatrixParam* spmma_matmul(MatrixParam *param, bool isMatrixValid) {
     // 1. fix matrix
     if (param->C == nullptr) {
         param->C = new __half[param->m * param->n];
@@ -729,10 +683,8 @@ MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
 
     MatrixParam *out = param->fix_matrix();
 
-    out->print_all();
-
     // 2.calculate
-    __mma_matmul(out, matB_cmpr);
+    __mma_matmul(out, isMatrixValid);
 
     // 3. compare with cpu
     out->check_correct();
@@ -742,7 +694,7 @@ MatrixParam* spmma_matmul(MatrixParam *param, __half *matB_cmpr) {
 
 Tensor4d *spmma_conv(ConvParam *param) {
     MatrixParam *matrix = param->im2col();  // 最初版本的matrix
-    MatrixParam *ans = spmma_matmul(matrix, nullptr);   // 这是fix后并且计算了D的matrix
+    MatrixParam *ans = spmma_matmul(matrix, false);   // 这是fix后并且计算了D的matrix
     MatrixParam *refix = ans->refix_matrix(matrix->m, matrix->n);    // 是把D重新恢复的matrix 其他都不变
     Tensor4d *ret = param->im2col_rev(refix);
     return ret;
@@ -751,7 +703,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
 void test_gemm(int m, int k, int n) {
     MatrixParam *param = new MatrixParam(m, k, n);
     __half *cmpr = param->generate_sparse_cmpr(5);
-    MatrixParam *ans = spmma_matmul(param, cmpr);
+    MatrixParam *ans = spmma_matmul(param, false);
     //ans->check_correct();
     // compress b的时候 是反过来的
     //ans->check_correct();
@@ -763,8 +715,7 @@ void test_conv() {
 
     data->generate_rand(5);
     kernel->generate_rand(3);
-    data->print_tensor();
-    kernel->print_tensor();
+
     Tensor4d *ans = spmma_conv(new ConvParam(data, kernel, 0, 1));
     ans->print_tensor();
 }
