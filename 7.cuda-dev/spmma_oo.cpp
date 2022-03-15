@@ -709,11 +709,10 @@ void test_gemm(int m, int k, int n) {
 }
 
 void test_conv() {
-    Tensor4d *data = new Tensor4d(1, 1, 6, 6);
-    Tensor4d *kernel = new Tensor4d(2, 3, 3, 3);
-
-    data->generate_rand(5);
-    kernel->generate_rand(3);
+    Tensor4d *data = new Tensor4d(4, 3, 16, 16);
+    Tensor4d *kernel = new Tensor4d(16, 3, 3, 3);
+    data->read_bin("data.bin");
+    kernel->read_bin("kernel.bin");
 
     Tensor4d *ans = spmma_conv(new ConvParam(data, kernel, 0, 1));
     ans->print_tensor();
