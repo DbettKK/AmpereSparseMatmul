@@ -514,7 +514,7 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, bool isValid) {
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune and Compress
-    if (！isValid) {
+    if (!isValid) {
         // 不符合条件 需要进行压缩
         CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
         int is_valid;
