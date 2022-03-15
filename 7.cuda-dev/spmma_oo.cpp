@@ -695,7 +695,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
     MatrixParam *matrix = param->im2col();  // 最初版本的matrix
     MatrixParam *ans = spmma_matmul(matrix, false);   // 这是fix后并且计算了D的matrix
     MatrixParam *refix = ans->refix_matrix(matrix->m, matrix->n);    // 是把D重新恢复的matrix 其他都不变
-    refix->print_all();
+    //refix->print_all();
     Tensor4d *ret = param->im2col_rev(refix);
     return ret;
 }
@@ -710,8 +710,8 @@ void test_gemm(int m, int k, int n) {
 }
 
 void test_conv() {
-    Tensor4d *data = new Tensor4d(4, 3, 16, 16);
-    Tensor4d *kernel = new Tensor4d(16, 3, 3, 3);
+    Tensor4d *data = new Tensor4d(4, 3, 256, 256);
+    Tensor4d *kernel = new Tensor4d(64, 3, 7, 7);
     data->read_bin("data.bin");
     kernel->read_bin("kernel.bin");
 
