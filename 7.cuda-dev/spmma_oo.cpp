@@ -695,7 +695,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
     MatrixParam *matrix = param->im2col();  // 最初版本的matrix
     MatrixParam *ans = spmma_matmul(matrix, false);   // 这是fix后并且计算了D的matrix
     MatrixParam *refix = ans->refix_matrix(matrix->m, matrix->n);    // 是把D重新恢复的matrix 其他都不变
-    refix->print_matrix(refix->D, matrix->m, matrix->n);
+    refix->print_all();
     Tensor4d *ret = param->im2col_rev(refix);
     return ret;
 }
