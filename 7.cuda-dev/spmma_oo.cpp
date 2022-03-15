@@ -525,9 +525,9 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, bool isValid) {
             CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
         }
         // 需要把prune后的b拿出来 和cpu比较需要用
-        __half *newB = new __half[k * n];
-        CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
-        param->B = newB;
+//        __half *newB = new __half[k * n];
+//        CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
+//        param->B = newB;
     }
     // 符合条件 不用判断 直接compress即可
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
@@ -686,7 +686,7 @@ MatrixParam* spmma_matmul(MatrixParam *param, bool isMatrixValid) {
     __mma_matmul(out, isMatrixValid);
 
     // 3. compare with cpu
-    out->check_correct();
+    //out->check_correct();
 
     return out;
 }
