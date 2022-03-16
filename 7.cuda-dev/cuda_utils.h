@@ -60,15 +60,15 @@ struct Matrix {
 };
 
 constexpr int EXIT_UNSUPPORTED = 2;
-const int m_global = 16;
-const int k_global = 16;
-const int n_global = 16;
+//const int m_global = 16;
+//const int k_global = 16;
+//const int n_global = 16;
 // todo: 大数据测试 多大会崩溃
 const int padding_global = 0;
 const int stride_global = 1;
 
-const int data_n_global = 2, data_c_global = 3, data_w_global = 6, data_h_global = 6;
-const int kernel_n_global = 4, kernel_c_global = 3, kernel_w_global = 3, kernel_h_global = 3;
+const int data_n_global = 4, data_c_global = 3, data_w_global = 256, data_h_global = 256;
+const int kernel_n_global = 64, kernel_c_global = 3, kernel_w_global = 7, kernel_h_global = 7;
 
 const int out_w = (data_w_global + 2 * padding_global - kernel_w_global) / stride_global + 1;
 const int out_h = (data_h_global + 2 * padding_global - kernel_h_global) / stride_global + 1;

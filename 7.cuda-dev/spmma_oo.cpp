@@ -532,7 +532,7 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, bool isValid) {
     CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
     //--------------------------------------------------------------------------
     // Prune and Compress
-    if (！isValid) {
+    if (!isValid) {
         // 不符合条件 需要进行压缩
         CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
         int is_valid;
@@ -543,9 +543,9 @@ spmmaStatus_t __mma_matmul(MatrixParam *param, bool isValid) {
             CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
         }
         // 需要把prune后的b拿出来 和cpu比较需要用
-        __half *newB = new __half[k * n];
-        CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
-        param->B = newB;
+//        __half *newB = new __half[k * n];
+//        CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
+//        param->B = newB;
     }
     // 符合条件 不用判断 直接compress即可
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
@@ -704,7 +704,7 @@ MatrixParam* spmma_matmul(MatrixParam *param, bool isMatrixValid) {
     __mma_matmul(out, isMatrixValid);
 
     // 3. compare with cpu
-    out->check_correct();
+    //out->check_correct();
 
     return out;
 }
@@ -713,6 +713,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
     MatrixParam *matrix = param->im2col();  // 最初版本的matrix
     MatrixParam *ans = spmma_matmul(matrix, false);   // 这是fix后并且计算了D的matrix
     MatrixParam *refix = ans->refix_matrix(matrix->m, matrix->n);    // 是把D重新恢复的matrix 其他都不变
+    //refix->print_all();
     Tensor4d *ret = param->im2col_rev(refix);
     return ret;
 }
@@ -727,14 +728,13 @@ void test_gemm(int m, int k, int n) {
 }
 
 void test_conv() {
-    Tensor4d *data = new Tensor4d(1, 1, 6, 6);
-    Tensor4d *kernel = new Tensor4d(2, 3, 3, 3);
-
-    data->generate_rand(5);
-    kernel->generate_rand(3);
+    Tensor4d *data = new Tensor4d(4, 3, 256, 256);
+    Tensor4d *kernel = new Tensor4d(64, 3, 7, 7);
+    data->read_bin("data.bin");
+    kernel->read_bin("kernel.bin");
 
     Tensor4d *ans = spmma_conv(new ConvParam(data, kernel, 0, 1));
-    ans->print_tensor();
+    //ans->print_tensor();
 }
 
 int main() {
