@@ -18,7 +18,7 @@ using namespace std;
 /*
     matA, matB: device IN
 */
-MatrixParam *spmma_matmul(const __half *matA, const __half *matB, int m_old, int k_old, int n_old, bool isValid) {
+MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old, int k_old, int n_old, bool isValid) {
     int m = m_old % 8 ? m_old + 8 - m_old % 8 : m_old;
     int k = k_old % 16 ? k_old + 16 - k_old % 16 : k_old;
     int n = n_old % 8 ? n_old + 8 - n_old % 8 : n_old;
@@ -37,8 +37,8 @@ MatrixParam *spmma_matmul(const __half *matA, const __half *matB, int m_old, int
     CHECK_CUDA( cudaMalloc((void**) &d_valid, sizeof(d_valid)) )
     dD = dC;
 
-    __padding_matrix<__half>(matA, m_old, k_old, dA, m, k);
-    __padding_matrix<__half>(matB, k_old, n_old, dB, k, n);
+    __padding_matrix<__half>(matA_h, m_old, k_old, dA, m, k);
+    __padding_matrix<__half>(matB_h, k_old, n_old, dB, k, n);
     CHECK_CUDA( cudaMemset(dC, 0, C_size) )
 
     // Leading dimension 如果行优先则代表列数
