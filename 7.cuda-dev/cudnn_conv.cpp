@@ -84,31 +84,31 @@ int main() {
 
 
     // algorithm
-    cudnnConvolutionFwdAlgoPerf_t algo_perf[4];
-    int ret;
-    CHECK_CUDNN( cudnnFindConvolutionForwardAlgorithm(handle,
-                                        input_descriptor,
-                                        kernel_descriptor,
-                                        conv_descriptor,
-                                        output_descriptor,
-                                        4,
-                                        &ret,
-                                        algo_perf) )
+//    cudnnConvolutionFwdAlgoPerf_t algo_perf[4];
+//    int ret;
+//    CHECK_CUDNN( cudnnFindConvolutionForwardAlgorithm(handle,
+//                                        input_descriptor,
+//                                        kernel_descriptor,
+//                                        conv_descriptor,
+//                                        output_descriptor,
+//                                        4,
+//                                        &ret,
+//                                        algo_perf) )
 
-    cudnnConvolutionFwdAlgo_t algo;
-    bool flag = false;
-    for (int i = 0; i < ret; i++) {
-        if (algo_perf[i].status == CUDNN_STATUS_SUCCESS) {
-            algo = algo_perf[i].algo;
-            cout << "algo:" << algo << endl;
-            flag = true;
-            break;
-        }
-    }
-    if (!flag) {
-        cout << "no alg" << endl;
-        return 0;
-    }
+    cudnnConvolutionFwdAlgo_t algo = 0;
+//    bool flag = false;
+//    for (int i = 0; i < ret; i++) {
+//        if (algo_perf[i].status == CUDNN_STATUS_SUCCESS) {
+//            algo = algo_perf[i].algo;
+//            cout << "algo:" << algo << endl;
+//            flag = true;
+//            break;
+//        }
+//    }
+//    if (!flag) {
+//        cout << "no alg" << endl;
+//        return 0;
+//    }
 
     // workspace size && allocate memory
     size_t workspace_size = 0;
