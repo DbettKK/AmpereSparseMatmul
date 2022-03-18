@@ -179,6 +179,8 @@ void test_conv() {
     Tensor4d *kernel = new Tensor4d(kernel_n, kernel_c, kernel_h, kernel_w);
     data->read_bin("data.bin");
     kernel->read_bin("kernel.bin");
+    printf("kernel:\n");
+    kernel->print_tensor();
     ConvParam *param = new ConvParam(data, kernel, 0, 1);
     Tensor4d *out = spmma_conv(param);
     out->print_tensor();
