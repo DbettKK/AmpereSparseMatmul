@@ -35,7 +35,7 @@ __global__ void im2col_gpu_kernel(const int n, const Dtype* data_im, const int d
     const int dilation_h, const int dilation_w,
     const int height_col, const int width_col, Dtype* data_col) {
     CUDA_KERNEL_LOOP(index, n) {
-        for (int idn = 0; idn < data_n; idn++){
+        for (int idn = 0; idn < data_n; idn++) {
             const int h_index = index / width_col;
             const int h_col = h_index % height_col;
             const int w_col = index % width_col;
@@ -54,7 +54,7 @@ __global__ void im2col_gpu_kernel(const int n, const Dtype* data_im, const int d
                 int w_im = w_offset + j * dilation_w;
                 *data_col_ptr =
                     (h_im >= 0 && w_im >= 0 && h_im < height && w_im < width) ?
-                    data_im_ptr[i * dilation_h * width + j * dilation_w] : static_cast<__half>(static_cast<float>(0));
+                    data_im_ptr[i * dilation_h * width + j * dilation_w] : __int2half_rn(0);
                 data_col_ptr += data_n * height_col * width_col;
               }
             }

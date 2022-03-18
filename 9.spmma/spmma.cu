@@ -134,7 +134,6 @@ Tensor4d *spmma_conv(ConvParam *param) {
     CUDA_CHECK( cudaMalloc((void **)&d_kernel, param->kernel->get_size() * sizeof(__half)) )
     CUDA_CHECK( cudaMemcpy(d_kernel, param->kernel, param->kernel->get_size() * sizeof(__half), cudaMemcpyHostToDevice) )
     CUDA_CHECK( cudaMalloc((void **)&d_im2col, param->getIm2col_size() * sizeof(__half)) )
-    printf("im2col_size: %d", param->getIm2col_size());
 
     im2col_gpu<__half>(d_data, param->data->n, param->data->c, param->data->h, param->data->w,
         param->kernel->h, param->kernel->w, param->padding, param->padding, param->stride, param->stride, 1, 1, d_im2col);
