@@ -139,20 +139,20 @@ def mtest(data_num, kernel_num):
 def mma():
     m, n, k = 16, 16, 16
     dtype = 'float32'
-    A = make_dense_mat(m, k, dtype)
-    B = make_sparse_mat(k, n, True, dtype)
+    A = make_sparse_mat(m, k, False, dtype)
+    B = make_dense_mat(k, n,  dtype)
     C = make_zero_mat(m, n, dtype)
-    B_cmpr = get_compressed_mat(B)
-    A.tofile('a.bin')
-    B_cmpr.tofile('bc.bin')
-    B.tofile('b.bin')
-    C.tofile('c.bin')
+    B_cmpr = get_compressed_mat(A)
+    A.tofile('../9.spmma/a.bin')
+    B_cmpr.tofile('../9.spmma/bc.bin')
+    B.tofile('../9.spmma/b.bin')
+    C.tofile('../9.spmma/c.bin')
     print(np.matmul(A, B))
 
 
 if __name__ == '__main__':
-    data_n, data_c, data_w, data_h = 4, 3, 256, 256
-    kernel_n, kernel_c, kernel_w, kernel_h = 64, 3, 7, 7
+    data_n, data_c, data_w, data_h = 4, 3, 16, 16
+    kernel_n, kernel_c, kernel_w, kernel_h = 2, 3, 3, 3
     padding = 0
     stride = 1
     dtype = 'float32'
@@ -177,7 +177,9 @@ if __name__ == '__main__':
 
     # to bin_file
     data.tofile('data.bin')
+    data.tofile('../9.spmma/data.bin')
     kernel.tofile('kernel.bin')
+    kernel.tofile('../9.spmma/kernel.bin')
     data_trans.tofile('a.bin')
     kernel_trans.tofile('b.bin')
     zero_matrix.tofile('c.bin')
