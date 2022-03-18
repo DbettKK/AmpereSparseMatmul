@@ -192,7 +192,18 @@ void test_conv() {
     //data->print_tensor();
     ConvParam *param = new ConvParam(data, kernel, 0, 1);
     Tensor4d *out = spmma_conv(param);
-    out->print_tensor();
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 1; j++) {
+            for (int k = 0; k < out->h; k++) {
+                for (int v = 0; v < out->w; v++) {
+                    printf("%d ", out->tensor[k * out->w + v]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
 }
 
 
