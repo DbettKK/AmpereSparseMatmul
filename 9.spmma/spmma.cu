@@ -186,5 +186,5 @@ void test_conv() {
 
 
 int main() {
-    test_matmul();
+    test_conv();
 }
