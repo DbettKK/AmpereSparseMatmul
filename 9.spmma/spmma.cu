@@ -138,15 +138,15 @@ Tensor4d *spmma_conv(ConvParam *param) {
     im2col_gpu<__half>(d_data, param->data->n, param->data->c, param->data->h, param->data->w,
         param->kernel->h, param->kernel->w, param->padding, param->padding, param->stride, param->stride, 1, 1, d_im2col);
 
-    __half *tmp_d = new __half[param->getIm2col_size()];
-    cudaMemcpy(tmp_d, d_im2col, param->getIm2col_size() * sizeof(__half), cudaMemcpyDeviceToHost);
-    printf("im2col: \n");
-    for (int i = 0; i < param->kernel->c * param->kernel->h * param->kernel->w; i++) {
-        for (int j = 0; j < param->data->n * param->getOut_height() * param->getOut_width(); j++){
-            printf("%d ", __half2int_rz(tmp_d[i * param->data->n * param->getOut_height() * param->getOut_width() + j]));
-        }
-        printf("\n");
-    }
+//     __half *tmp_d = new __half[param->getIm2col_size()];
+//     cudaMemcpy(tmp_d, d_im2col, param->getIm2col_size() * sizeof(__half), cudaMemcpyDeviceToHost);
+//     printf("im2col: \n");
+//     for (int i = 0; i < param->kernel->c * param->kernel->h * param->kernel->w; i++) {
+//         for (int j = 0; j < param->data->n * param->getOut_height() * param->getOut_width(); j++){
+//             printf("%d ", __half2int_rz(tmp_d[i * param->data->n * param->getOut_height() * param->getOut_width() + j]));
+//         }
+//         printf("\n");
+//     }
 
     MatrixParam *out = spmma_matmul(d_kernel, d_im2col, param->kernel->n, param->kernel->c * param->kernel->h * param->kernel->w,
         param->data->n * param->getOut_height() * param->getOut_width(), false);
@@ -188,8 +188,8 @@ void test_conv() {
     Tensor4d *kernel = new Tensor4d(kernel_n, kernel_c, kernel_h, kernel_w);
     data->read_bin("data.bin");
     kernel->read_bin("kernel.bin");
-    printf("data:\n");
-    data->print_tensor();
+    //printf("data:\n");
+    //data->print_tensor();
     ConvParam *param = new ConvParam(data, kernel, 0, 1);
     Tensor4d *out = spmma_conv(param);
     out->print_tensor();
