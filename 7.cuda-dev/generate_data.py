@@ -62,6 +62,15 @@ def make_tensor(n, c, w, h, _dtype):
     return np.random.randint(0, 5, (n, c, w, h)).astype(_dtype)
 
 
+def make_sparse_kernel(n, c, w, h, _dtype):
+    tensor = np.zeros(n * c * w * h).astype(_dtype)
+    for i in range(n * c * w * h):
+        if i % 2 == 0:
+            tensor[i] = random.randint(1, 5)
+    return tensor.reshape(n, c, w, h)
+
+
+
 def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0, _dtype='float32'):
     """
     Parameters
@@ -158,7 +167,7 @@ if __name__ == '__main__':
     dtype = 'float32'
 
     data = make_tensor(data_n, data_c, data_w, data_h, dtype)
-    kernel = make_tensor(kernel_n, kernel_c, kernel_w, kernel_h, dtype)
+    kernel = make_sparse_kernel(kernel_n, kernel_c, kernel_w, kernel_h, dtype)
 
     data_trans = im2col(data, kernel_h, kernel_w, stride, padding, dtype)
     data_trans_w, data_trans_h = data_trans.shape
@@ -168,7 +177,7 @@ if __name__ == '__main__':
     k = data_trans_h
     n = kernel_n
     #print(data)
-    #print(kernel)
+    print(kernel)
     print(m, k, n)
     #print(data_trans)
     #print(kernel_trans)
