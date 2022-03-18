@@ -130,7 +130,7 @@ void print_matrix(const int &m, const int &n, const float *A, const int &lda) {
 }
 
 void print_tensor(float *item, int n, int c, int h, int w) {
-    if (n * c * w * h > 300) return;
+    //if (n * c * w * h > 300) return;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < c; j++) {
             for (int k = 0; k < h; k++) {
