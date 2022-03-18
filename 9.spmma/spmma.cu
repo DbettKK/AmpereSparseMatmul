@@ -139,7 +139,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
         param->kernel->h, param->kernel->w, param->padding, param->padding, param->stride, param->stride, 1, 1, d_im2col);
 
 
-    MatrixParam *out = spmma_matmul(d_kernel, d_im2col, param->kernel->n, param->kernel->c * param->kernel->h * param->kernel->w
+    MatrixParam *out = spmma_matmul(d_kernel, d_im2col, param->kernel->n, param->kernel->c * param->kernel->h * param->kernel->w,
         param->data->n * param->getOut_height() * param->getOut_width(), false);
 
     //refix->print_all();
