@@ -130,9 +130,9 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
 Tensor4d *spmma_conv(ConvParam *param) {
     __half *d_data, *d_kernel, *d_im2col;
     CUDA_CHECK( cudaMalloc((void **)&d_data, param->data->get_size() * sizeof(__half)) )
-    CUDA_CHECK( cudaMemcpy(d_data, param->data, param->data->get_size() * sizeof(__half), cudaMemcpyHostToDevice) )
+    CUDA_CHECK( cudaMemcpy(d_data, param->data->tensor, param->data->get_size() * sizeof(__half), cudaMemcpyHostToDevice) )
     CUDA_CHECK( cudaMalloc((void **)&d_kernel, param->kernel->get_size() * sizeof(__half)) )
-    CUDA_CHECK( cudaMemcpy(d_kernel, param->kernel, param->kernel->get_size() * sizeof(__half), cudaMemcpyHostToDevice) )
+    CUDA_CHECK( cudaMemcpy(d_kernel, param->kernel->tensor, param->kernel->get_size() * sizeof(__half), cudaMemcpyHostToDevice) )
     CUDA_CHECK( cudaMalloc((void **)&d_im2col, param->getIm2col_size() * sizeof(__half)) )
 
     im2col_gpu<__half>(d_data, param->data->n, param->data->c, param->data->h, param->data->w,
