@@ -95,7 +95,7 @@ int main() {
 //                                        &ret,
 //                                        algo_perf) )
 
-    cudnnConvolutionFwdAlgo_t algo = CUDNN_CONVOLUTION_FWD_ALGO_GEMM;
+    cudnnConvolutionFwdAlgo_t algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
 //    bool flag = false;
 //    for (int i = 0; i < ret; i++) {
 //        if (algo_perf[i].status == CUDNN_STATUS_SUCCESS) {
