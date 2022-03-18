@@ -138,14 +138,9 @@ Tensor4d *spmma_conv(ConvParam *param) {
     im2col_gpu<__half>(d_data, param->data->n, param->data->c, param->data->h, param->data->w,
         param->kernel->h, param->kernel->w, param->padding, param->padding, param->stride, param->stride, 1, 1, d_im2col);
 
-    __half *tmp = new __half[param->getIm2col_size()];
-    cudaMemcpy(tmp, d_im2col, sizeof(__half) * param->getIm2col_size(), cudaMemcpyDeviceToHost);
-    for (int i = 0; i <param->getIm2col_size(); i++) printf("%d ", tmp[i]);
-    printf("\n");
 
-    MatrixParam *out = spmma_matmul(d_im2col, d_kernel,
-        param->data->n * param->getOut_height() * param->getOut_width(),
-        param->kernel->c * param->kernel->h * param->kernel->w, param->kernel->n, false);
+    MatrixParam *out = spmma_matmul(d_kernel, d_im2col, param->kernel->n, param->kernel->c * param->kernel->h * param->kernel->w
+        param->data->n * param->getOut_height() * param->getOut_width(), false);
 
     //refix->print_all();
     __half *d_ans, *d_im2col_rev;
