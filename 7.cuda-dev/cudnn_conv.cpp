@@ -100,6 +100,7 @@ int main() {
     for (int i = 0; i < ret; i++) {
         if (algo_perf[i].status == CUDNN_STATUS_SUCCESS) {
             algo = algo_perf[i].algo;
+            cout << "algo:" << algo << endl;
             flag = true;
             break;
         }

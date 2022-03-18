@@ -1,44 +1,122 @@
 #include<iostream>
 #include<fstream>
+#include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+#include<cuda_fp16.h>
 
-#include<cstdint>
 #include<cstdio>
 #include<cstring>       // memset
 #include<cstdlib>       // malloc
-#include<cmath>
 
-#include<cuda_fp16.h>
-#include<cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
-#include<cusparseLt.h>       // cusparseLt header
+#include"utils.hpp"
 
 using namespace std;
 
-using spmmaStatus_t = int;
-
-#define CHECK_CUDA(func)                                                       \
-{                                                                              \
-    cudaError_t status = (func);                                               \
-    if (status != cudaSuccess) {                                               \
-        printf("CUDA API failed at line %d with error: %s (%d)\n",             \
-               __LINE__, cudaGetErrorString(status), status);                  \
-        return EXIT_FAILURE;                                                   \
-    }                                                                          \
+/*
+    src: device IN
+    dest: device OUT (need to allocate)
+*/
+template <typename Dtype>
+void __padding_matrix(const Dtype* src, const int row, const int col,
+               Dtype *dest, const int row_padding, const int col_padding) {
+    cudaMemset(dest, 0, row_padding * col_padding * sizeof(Dtype));
+    if (col == col_padding) {
+        CUDA_CHECK( cudaMemcpy(dest, src, row * col_padding * sizeof(Dtype), cudaMemcpyDeviceToDevice) )
+    } else {
+        // spitch指定想要复制的矩阵的本身的宽度 width指定需要复制的宽度 dpitch指定赋值到dest的宽度
+        CUDA_CHECK( cudaMemcpy2D(dest, col_padding * sizeof(Dtype), src, col * sizeof(Dtype), col * sizeof(Dtype), row, cudaMemcpyDeviceToDevice) )
+    }
 }
 
-#define CHECK_CUSPARSE(func)                                                   \
-{                                                                              \
-    cusparseStatus_t status = (func);                                          \
-    if (status != CUSPARSE_STATUS_SUCCESS) {                                   \
-        printf("CUSPARSE API failed at line %d with error: %s (%d)\n",         \
-               __LINE__, cusparseGetErrorString(status), status);              \
-        return EXIT_FAILURE;                                                   \
-    }                                                                          \
+template <typename Dtype>
+__global__ void im2col_gpu_kernel(const int n, const Dtype* data_im, const int data_n, const int channel,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w,
+    const int stride_h, const int stride_w,
+    const int dilation_h, const int dilation_w,
+    const int height_col, const int width_col, Dtype* data_col) {
+    CUDA_KERNEL_LOOP(index, n) {
+        for (int idn = 0; idn < data_n; idn++){
+            const int h_index = index / width_col;
+            const int h_col = h_index % height_col;
+            const int w_col = index % width_col;
+            const int c_im = h_index / height_col;
+            const int c_col = c_im * kernel_h * kernel_w;
+            const int h_offset = h_col * stride_h - pad_h;
+            const int w_offset = w_col * stride_w - pad_w;
+            Dtype* data_col_ptr = data_col;
+            data_col_ptr += idn * height_col * width_col + (c_col * height_col * data_n + h_col) * width_col  + w_col;   // 确定输出的pointer的位置
+            const Dtype* data_im_ptr = data_im;
+            data_im_ptr += idn * channel * height * width + (c_im * height + h_offset) * width + w_offset;   // 确定图像的位置
+
+            for (int i = 0; i < kernel_h; ++i) {
+              for (int j = 0; j < kernel_w; ++j) {
+                int h_im = h_offset + i * dilation_h;
+                int w_im = w_offset + j * dilation_w;
+                *data_col_ptr =
+                    (h_im >= 0 && w_im >= 0 && h_im < height && w_im < width) ?
+                    data_im_ptr[i * dilation_h * width + j * dilation_w] : 0;
+                data_col_ptr += data_n * height_col * width_col;
+              }
+            }
+        }
+    }
 }
 
-const spmmaStatus_t SUCCESS = 0;
-const spmmaStatus_t DO_NOTHING = 1;
-const spmmaStatus_t ERROR = 2;
-const spmmaStatus_t UNSUPPORTED = 3;
+template <typename Dtype>
+void im2col_gpu(const Dtype* data_im, const int data_n, const int channels,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w,
+    const int stride_h, const int stride_w,
+    const int dilation_h, const int dilation_w, Dtype* data_col) {
+    // We are going to launch channels * height_col * width_col kernels, each
+    // kernel responsible for copying a single-channel grid.
+    int height_col = (height + 2 * pad_h -
+      (dilation_h * (kernel_h - 1) + 1)) / stride_h + 1;
+    int width_col = (width + 2 * pad_w -
+      (dilation_w * (kernel_w - 1) + 1)) / stride_w + 1;
+    int num_kernels = channels * height_col * width_col;
+    // NOLINT_NEXT_LINE(whitespace/operators)
+    im2col_gpu_kernel<Dtype> <<< GET_BLOCKS(num_kernels), CUDA_NUM_THREADS >>>(
+        num_kernels, data_im, data_n, channels, height, width, kernel_h, kernel_w, pad_h,
+        pad_w, stride_h, stride_w, dilation_h, dilation_w, height_col, width_col, data_col);
+    CUDA_POST_KERNEL_CHECK;
+}
+
+template <typename Dtype>
+__global__ void im2col_rev_kernel(
+    const int n, const Dtype *data, int data_n, int kernel_n, int out_h, int out_w, Dtype *out) {
+    // row: n * out_h * out_w
+    // col: kernel_c * kernel_h * kernel_w
+    // n * out_h * out_w个线程
+    CUDA_KERNEL_LOOP(index, n) {
+        // 每个thread负责一个卷积核对应位置的所有channel
+        int line = index % (data_n * out_h * out_w);
+        int n_index = index / (out_h * out_w);
+        int h_index = (index - n_index * (out_h * out_w)) / out_w;
+        int w_index = (index - n_index * (out_h * out_w)) - h_index * out_w;
+        for (int i = 0; i < kernel_n; i++) {
+            out[n_index * kernel_n * out_h * out_w + i * out_h * out_w + h_index * out_w + w_index] = data[line * kernel_n + i];
+        }
+    }
+}
+
+template <typename Dtype>
+__global__ void im2col_rev_kernel(
+    const int n, const Dtype *data, int data_n, int kernel_n, int out_h, int out_w, Dtype *out) {
+    // row: kernel_n
+    // col: n * out_h * out_w
+    // n * out_h * out_w个线程
+    CUDA_KERNEL_LOOP(index, n) {
+        // 每个thread负责一个卷积核对应位置的所有channel
+        int line = index % (data_n * out_h * out_w);
+        int n_index = index / (out_h * out_w);
+        int h_index = (index - n_index * (out_h * out_w)) / out_w;
+        int w_index = (index - n_index * (out_h * out_w)) - h_index * out_w;
+        for (int i = 0; i < kernel_n; i++) {
+            out[n_index * kernel_n * out_h * out_w + i * out_h * out_w + h_index * out_w + w_index] = data[i * data_n * out_h * out_w + line];
+        }
+    }
+}
 
 struct Tensor4d {
     __half *tensor;
@@ -113,15 +191,10 @@ struct MatrixParam {
         print_matrix(this->D, this->m, this->n);
     }
 
-    void copy(MatrixParam *param) {
-        this->A = param->A;
-        this->B = param->B;
-        this->C = param->C;
-        this->D = param->D;
-        this->m = param->m;
-        this->k = param->k;
-        this->n = param->n;
-    }
+    int get_m_padding() { return m % 8 ? m + 8 - m % 8 : m; }
+    int get_k_padding() { return k % 16 ? k + 16 - k % 16 : k; }
+    int get_n_padding() { return n % 8 ? n + 8 - n % 8 : n; }
+
 
     MatrixParam *fix_matrix() {
         // get the number row/col need to pad
@@ -341,6 +414,8 @@ struct ConvParam {
 
     int getOut_height() { return (data->h + 2 * padding - kernel->h) / stride + 1; }
 
+    int getIm2col_size() { return data->n * getOut_height() * getOut_width() * kernel->c * kernel->h * kernel->w; }
+
     Tensor4d *pad_data() {
         int data_h_pad = data->h + padding * 2, data_w_pad = data->w + padding * 2;
         __half *data_pad = new __half[data->n * data->c * data_h_pad * data_w_pad];
@@ -460,288 +535,3 @@ struct ConvParam {
         return new Tensor4d(ret, data->n, kernel->n, out_h, out_w);
     }
 };
-
-spmmaStatus_t check_gpu() {
-    // 检查GPU是否支持cuSparseLt
-    int major_cc, minor_cc;
-    CHECK_CUDA( cudaDeviceGetAttribute(&major_cc, cudaDevAttrComputeCapabilityMajor, 0) )
-    CHECK_CUDA( cudaDeviceGetAttribute(&minor_cc, cudaDevAttrComputeCapabilityMinor, 0) )
-    if (!(major_cc == 8 && minor_cc == 0) && !(major_cc == 8 && minor_cc == 6)) {
-        printf("\n cusparseLt is supported only on GPU devices with compute capability == 8.0, 8.6 current: %d.%d\n\n",
-                     major_cc, minor_cc);
-        return UNSUPPORTED;
-    }
-}
-
-spmmaStatus_t __mma_matmul(MatrixParam *param, bool isValid) {
-    __half *hA = param->A;
-    __half *hB = param->B;
-    __half *hC = param->C;
-
-    int m = param->m, k = param->k, n = param->n;
-
-    size_t A_size = m * k * sizeof(__half);
-    size_t B_size = k * n * sizeof(__half);
-    size_t C_size = m * n * sizeof(__half);
-
-    // Leading dimension 如果行优先则代表列数
-    int lda = k, ldb = n, ldc = n;
-    auto opA = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    auto opB = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    auto order = CUSPARSE_ORDER_ROW; // cusparseOrder_t
-    auto type  = CUDA_R_16F;
-    auto compute_type = CUSPARSE_COMPUTE_16F;
-    float alpha = 1.0f;
-    float beta  = 0.0f;
-    unsigned alignment = 16;
-
-    // device
-    __half *dA, *dB, *dC, *dD, *dB_compressed;
-    int *d_valid;
-    CHECK_CUDA( cudaMalloc((void**) &dA, A_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dB, B_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dC, C_size) )
-    CHECK_CUDA( cudaMalloc((void**) &d_valid, sizeof(d_valid)) )
-    dD = dC;
-    // 从host拷贝到device
-    CHECK_CUDA( cudaMemcpy(dA, hA, A_size, cudaMemcpyHostToDevice) )
-    CHECK_CUDA( cudaMemcpy(dB, hB, B_size, cudaMemcpyHostToDevice) )
-    CHECK_CUDA( cudaMemcpy(dC, hC, C_size, cudaMemcpyHostToDevice) )
-
-    //--------------------------------------------------------------------------
-    cusparseLtHandle_t             handle;
-    cusparseLtMatDescriptor_t      matA, matB, matC;
-    cusparseLtMatmulDescriptor_t   matmul;
-    cusparseLtMatmulAlgSelection_t alg_sel;
-    cusparseLtMatmulPlan_t         plan;
-    cudaStream_t                   stream = nullptr;
-    CHECK_CUSPARSE( cusparseLtInit(&handle) )
-    // matrix descriptor initialization
-    CHECK_CUSPARSE( cusparseLtStructuredDescriptorInit(&handle, &matB, k, n, ldb, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
-    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order) )
-    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matC, m, n, ldc, alignment, type, order) )
-    // matmul, algorithm selection, and plan initialization
-    CHECK_CUSPARSE( cusparseLtMatmulDescriptorInit( &handle, &matmul, opA, opB, &matA, &matB, &matC, &matC, compute_type) )
-    CHECK_CUSPARSE( cusparseLtMatmulAlgSelectionInit( &handle, &alg_sel, &matmul, CUSPARSELT_MATMUL_ALG_DEFAULT) )
-    int alg = 0;    // 算法
-    CHECK_CUSPARSE( cusparseLtMatmulAlgSetAttribute( &handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg, sizeof(alg)))
-
-    size_t workspace_size, compressed_size;
-    CHECK_CUSPARSE( cusparseLtMatmulGetWorkspace(&handle, &alg_sel, &workspace_size))
-
-    CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
-    //--------------------------------------------------------------------------
-    // Prune and Compress
-    if (!isValid) {
-        // 不符合条件 需要进行压缩
-        CHECK_CUSPARSE( cusparseLtSpMMAPruneCheck(&handle, &matmul, dB, d_valid, stream) )
-        int is_valid;
-        CHECK_CUDA( cudaMemcpyAsync(&is_valid, d_valid, sizeof(d_valid), cudaMemcpyDeviceToHost, stream) )
-        CHECK_CUDA( cudaStreamSynchronize(stream) )
-        if (is_valid != 0) {
-            std::printf("!!!! The matrix need to be pruned.\n");
-            CHECK_CUSPARSE( cusparseLtSpMMAPrune(&handle, &matmul, dB, dB, CUSPARSELT_PRUNE_SPMMA_TILE, stream) )
-        }
-        // 需要把prune后的b拿出来 和cpu比较需要用
-//        __half *newB = new __half[k * n];
-//        CHECK_CUDA( cudaMemcpy(newB, dB, B_size, cudaMemcpyDeviceToHost) )
-//        param->B = newB;
-    }
-    // 符合条件 不用判断 直接compress即可
-    CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dB_compressed, compressed_size) )
-    CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dB, dB_compressed, stream) )
-    //--------------------------------------------------------------------------
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Search the best kernel
-    void* d_workspace = nullptr;
-    int num_streams = 0;
-    cudaStream_t* streams = nullptr;
-    /*
-    int alg_id;
-    CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg_id, sizeof(alg_id)) )
-    printf("best alg: %d\n", alg_id);
-    */
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Perform the matrix multiplication
-    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA, dB_compressed, &beta, dC, dD, d_workspace, streams, num_streams) )
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // destroy plan and handle
-    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matA) )
-    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matB) )
-    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matC) )
-    CHECK_CUSPARSE( cusparseLtMatmulPlanDestroy(&plan) )
-    CHECK_CUSPARSE( cusparseLtDestroy(&handle) )
-    //--------------------------------------------------------------------------
-    // device result check
-    // matrix A has been pruned
-    CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(param->D, dD, C_size, cudaMemcpyDeviceToHost) )
-
-    return SUCCESS;
-}
-
-spmmaStatus_t __mma_matmul_A(MatrixParam *param, __half *matA_cmpr) {
-    __half *hA = param->A;
-    __half *hB = param->B;
-    __half *hC = param->C;
-
-    int m = param->m, k = param->k, n = param->n;
-
-    size_t A_size = m * k * sizeof(__half);
-    size_t B_size = k * n * sizeof(__half);
-    size_t C_size = m * n * sizeof(__half);
-
-    // Leading dimension 如果行优先则代表列数
-    int lda = k, ldb = n, ldc = n;
-    auto opA = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    auto opB = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    auto order = CUSPARSE_ORDER_ROW; // cusparseOrder_t
-    auto type  = CUDA_R_16F;
-    auto compute_type = CUSPARSE_COMPUTE_16F;
-    float alpha = 1.0f;
-    float beta  = 0.0f;
-    unsigned alignment = 16;
-
-    // device
-    __half *dA, *dB, *dC, *dD, *dA_compressed;
-    int *d_valid;
-    CHECK_CUDA( cudaMalloc((void**) &dA, A_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dB, B_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dC, C_size) )
-    CHECK_CUDA( cudaMalloc((void**) &d_valid, sizeof(d_valid)) )
-    dD = dC;
-    // 从host拷贝到device
-    CHECK_CUDA( cudaMemcpy(dA, hA, A_size, cudaMemcpyHostToDevice) )
-    CHECK_CUDA( cudaMemcpy(dB, hB, B_size, cudaMemcpyHostToDevice) )
-    CHECK_CUDA( cudaMemcpy(dC, hC, C_size, cudaMemcpyHostToDevice) )
-
-    //--------------------------------------------------------------------------
-    cusparseLtHandle_t             handle;
-    cusparseLtMatDescriptor_t      matA, matB, matC;
-    cusparseLtMatmulDescriptor_t   matmul;
-    cusparseLtMatmulAlgSelection_t alg_sel;
-    cusparseLtMatmulPlan_t         plan;
-    cudaStream_t                   stream = nullptr;
-    CHECK_CUSPARSE( cusparseLtInit(&handle) )
-    // matrix descriptor initialization
-    CHECK_CUSPARSE( cusparseLtStructuredDescriptorInit(&handle, &matA, m, k, lda, alignment, type, order, CUSPARSELT_SPARSITY_50_PERCENT) )
-    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matB, k, n, ldb, alignment, type, order) )
-    CHECK_CUSPARSE( cusparseLtDenseDescriptorInit(&handle, &matC, m, n, ldc, alignment, type, order) )
-    // matmul, algorithm selection, and plan initialization
-    CHECK_CUSPARSE( cusparseLtMatmulDescriptorInit( &handle, &matmul, opA, opB, &matA, &matB, &matC, &matC, compute_type) )
-    CHECK_CUSPARSE( cusparseLtMatmulAlgSelectionInit( &handle, &alg_sel, &matmul, CUSPARSELT_MATMUL_ALG_DEFAULT) )
-    int alg = 0;    // 算法
-    CHECK_CUSPARSE( cusparseLtMatmulAlgSetAttribute( &handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg, sizeof(alg)))
-
-    size_t workspace_size, compressed_size;
-    CHECK_CUSPARSE( cusparseLtMatmulGetWorkspace(&handle, &alg_sel, &workspace_size))
-
-    CHECK_CUSPARSE( cusparseLtMatmulPlanInit(&handle, &plan, &matmul, &alg_sel, workspace_size) )
-    //--------------------------------------------------------------------------
-
-    // Prune and Compress
-
-    cout << "A: " << endl;
-    param->print_matrix(param->A, m, k);
-    cout << "A_cmpr: " << endl;
-    param->print_matrix(matA_cmpr, m, k / 2);
-
-    CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
-    CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
-    cout << compressed_size / sizeof(void) << endl;
-    CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
-    //--------------------------------------------------------------------------
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Search the best kernel
-    void* d_workspace = nullptr;
-    int num_streams = 0;
-    cudaStream_t* streams = nullptr;
-    /*
-    int alg_id;
-    CHECK_CUSPARSE( cusparseLtMatmulAlgGetAttribute(&handle, &alg_sel, CUSPARSELT_MATMUL_ALG_CONFIG_ID, &alg_id, sizeof(alg_id)) )
-    printf("best alg: %d\n", alg_id);
-    */
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Perform the matrix multiplication
-    CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // destroy plan and handle
-    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matA) )
-    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matB) )
-    CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matC) )
-    CHECK_CUSPARSE( cusparseLtMatmulPlanDestroy(&plan) )
-    CHECK_CUSPARSE( cusparseLtDestroy(&handle) )
-    //--------------------------------------------------------------------------
-    // device result check
-    // matrix A has been pruned
-    CHECK_CUDA( cudaMemcpy(hA, dA, A_size, cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(hC, dC, C_size, cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(param->D, dD, C_size, cudaMemcpyDeviceToHost) )
-
-    return SUCCESS;
-}
-
-/* matmul with mma */
-/* matD -> OUT, matC/matA_cmpr -> alternative */
-MatrixParam* spmma_matmul(MatrixParam *param, bool isMatrixValid) {
-    // 1. fix matrix
-    if (param->C == nullptr) {
-        param->C = new __half[param->m * param->n];
-        memset(param->C, 0, param->m * param->n * sizeof(__half));
-    }
-    if (param->D == nullptr) {
-        param->D = new __half[param->m * param->n];
-        memset(param->D, 0, param->m * param->n * sizeof(__half));
-    }
-
-    MatrixParam *out = param->fix_matrix();
-
-    // 2.calculate
-    __mma_matmul(out, isMatrixValid);
-
-    // 3. compare with cpu
-    //out->check_correct();
-
-    return out;
-}
-
-Tensor4d *spmma_conv(ConvParam *param) {
-    MatrixParam *matrix = param->im2col();  // 最初版本的matrix
-    MatrixParam *ans = spmma_matmul(matrix, false);   // 这是fix后并且计算了D的matrix
-    MatrixParam *refix = ans->refix_matrix(matrix->m, matrix->n);    // 是把D重新恢复的matrix 其他都不变
-    //refix->print_all();
-    Tensor4d *ret = param->im2col_rev(refix);
-    return ret;
-}
-// 5866
-void test_gemm(int m, int k, int n) {
-    MatrixParam *param = new MatrixParam(m, k, n);
-    __half *cmpr = param->generate_sparse_cmpr(5);
-    MatrixParam *ans = spmma_matmul(param, false);
-    //ans->check_correct();
-    // compress b的时候 是反过来的
-    //ans->check_correct();
-}
-
-void test_conv() {
-    Tensor4d *data = new Tensor4d(4, 3, 256, 256);
-    Tensor4d *kernel = new Tensor4d(64, 3, 7, 7);
-    data->read_bin("data.bin");
-    kernel->read_bin("kernel.bin");
-
-    Tensor4d *ans = spmma_conv(new ConvParam(data, kernel, 0, 1));
-    //ans->print_tensor();
-}
-
-int main() {
-    test_conv();
-}
-
-// todo: cpu时间的考虑
-// todo: A B sparse的多次比较 以及转置的考虑
-// todo: im2col和padding放到gpu做
-// todo: 和tvm比较时间

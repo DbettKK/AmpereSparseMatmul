@@ -18,13 +18,6 @@ using namespace std;
     }                                                                          \
 }
 
-//#define CUDA_CHECK(condition) \
-//  /* Code block avoids redefinition of cudaError_t error */ \
-//  do { \
-//    cudaError_t error = condition; \
-//    CHECK_EQ(error, cudaSuccess) << " " << cudaGetErrorString(error); \
-//  } while (0)
-
 #define CUDA_POST_KERNEL_CHECK CUDA_CHECK(cudaPeekAtLastError())
 
 // CUDA: use 512 threads per block
@@ -96,100 +89,36 @@ void im2col_gpu(const Dtype* data_im, const int data_n, const int channels,
 }
 
 // Explicit instantiation
-template void im2col_gpu<float>(const float* data_im, const int channels,
+template void im2col_gpu<float>(const float* data_im, const int data_n, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h, const int stride_w,
     const int dilation_h, const int dilation_w, float* data_col);
-template void im2col_gpu<double>(const double* data_im, const int channels,
+template void im2col_gpu<double>(const double* data_im, const int data_n, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h, const int stride_w,
     const int dilation_h, const int dilation_w, double* data_col);
-template void im2col_gpu<__half>(const __half* data_im, const int channels,
+template void im2col_gpu<__half>(const __half* data_im, const int data_n, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h, const int stride_w,
     const int dilation_h, const int dilation_w, __half* data_col);
 
 template <typename Dtype>
-__global__ void col2im_gpu_kernel(const int n, const Dtype* data_col,
-    const int height, const int width, const int channels,
-    const int kernel_h, const int kernel_w,
-    const int pad_h, const int pad_w,
-    const int stride_h, const int stride_w,
-    const int dilation_h, const int dilation_w,
-    const int height_col, const int width_col,
-    Dtype* data_im) {
-  CUDA_KERNEL_LOOP(index, n) {
-    Dtype val = 0;
-    const int w_im = index % width + pad_w;
-    const int h_im = (index / width) % height + pad_h;
-    const int c_im = index / (width * height);
-    int kernel_extent_w = (kernel_w - 1) * dilation_w + 1;
-    int kernel_extent_h = (kernel_h - 1) * dilation_h + 1;
-    // compute the start and end of the output
-    const int w_col_start =
-        (w_im < kernel_extent_w) ? 0 : (w_im - kernel_extent_w) / stride_w + 1;
-    const int w_col_end = min(w_im / stride_w + 1, width_col);
-    const int h_col_start =
-        (h_im < kernel_extent_h) ? 0 : (h_im - kernel_extent_h) / stride_h + 1;
-    const int h_col_end = min(h_im / stride_h + 1, height_col);
-    // TODO: use LCM of stride and dilation to avoid unnecessary loops
-    for (int h_col = h_col_start; h_col < h_col_end; h_col += 1) {
-      for (int w_col = w_col_start; w_col < w_col_end; w_col += 1) {
-        int h_k = (h_im - h_col * stride_h);
-        int w_k = (w_im - w_col * stride_w);
-        if (h_k % dilation_h == 0 && w_k % dilation_w == 0) {
-          h_k /= dilation_h;
-          w_k /= dilation_w;
-          int data_col_index = (((c_im * kernel_h + h_k) * kernel_w + w_k) *
-                                height_col + h_col) * width_col + w_col;
-          val = static_cast<float>(val) + static_cast<float>(data_col[data_col_index]);
+__global__ void im2col_rev_kernel(
+    const int n, const Dtype *data, int data_n, int kernel_n, int out_h, int out_w, Dtype *out) {
+    // row: n * out_h * out_w
+    // col: kernel_c * kernel_h * kernel_w
+    // n * out_h * out_w个线程
+    CUDA_KERNEL_LOOP(index, n) {
+        // 每个thread负责一个卷积核对应位置的所有channel
+        int line = index % (data_n * out_h * out_w);
+        int n_index = index / (out_h * out_w);
+        int h_index = (index - n_index * (out_h * out_w)) / out_w;
+        int w_index = (index - n_index * (out_h * out_w)) - h_index * out_w;
+        for (int i = 0; i < kernel_n; i++) {
+            out[n_index * kernel_n * out_h * out_w + i * out_h * out_w + h_index * out_w + w_index] = data[line * kernel_n + i];
         }
-      }
     }
-    data_im[index] = val;
-  }
 }
-
-
-template <typename Dtype>
-void col2im_gpu(const Dtype* data_col, const int channels,
-    const int height, const int width, const int kernel_h, const int kernel_w,
-    const int pad_h, const int pad_w, const int stride_h,
-    const int stride_w, const int dilation_h, const int dilation_w,
-    Dtype* data_im) {
-  int height_col = (height + 2 * pad_h - (dilation_h * (kernel_h - 1) + 1)) /
-      stride_h + 1;
-  int width_col = (width + 2 * pad_w - (dilation_w * (kernel_w - 1) + 1)) /
-      stride_w + 1;
-  int num_kernels = channels * height * width;
-  // To avoid involving atomic operations, we will launch one kernel per
-  // bottom dimension, and then in the kernel add up the top dimensions.
-  // NOLINT_NEXT_LINE(whitespace/operators)
-  col2im_gpu_kernel<Dtype><<<CAFFE_GET_BLOCKS(num_kernels),
-                             CAFFE_CUDA_NUM_THREADS>>>(
-      num_kernels, data_col, height, width, channels, kernel_h, kernel_w,
-      pad_h, pad_w, stride_h, stride_w, dilation_h, dilation_w,
-      height_col, width_col, data_im);
-  CUDA_POST_KERNEL_CHECK;
-}
-
-// Explicit instantiation
-template void col2im_gpu<float>(const float* data_col, const int channels,
-    const int height, const int width, const int kernel_h, const int kernel_w,
-    const int pad_h, const int pad_w, const int stride_h,
-    const int stride_w, const int dilation_h, const int dilation_w,
-    float* data_im);
-template void col2im_gpu<double>(const double* data_col, const int channels,
-    const int height, const int width, const int kernel_h, const int kernel_w,
-    const int pad_h, const int pad_w, const int stride_h,
-    const int stride_w, const int dilation_h, const int dilation_w,
-    double* data_im);
-template void col2im_gpu<__half>(const __half* data_col, const int channels,
-    const int height, const int width, const int kernel_h, const int kernel_w,
-    const int pad_h, const int pad_w, const int stride_h,
-    const int stride_w, const int dilation_h, const int dilation_w,
-    __half* data_im);
-
 
 int main() {
     Tensor4d *data = new Tensor4d(2, 3, 7, 7);
@@ -201,50 +130,32 @@ int main() {
     ConvParam *param = new ConvParam(data, kernel, 1, 1);
 
     MatrixParam *m = param->im2col();
-    float *c = new float[m->m * m->k];
-    for (int i = 0; i < m->m * m->k; i++) {
-        c[i] = __half2float(m->A[i]);
-    }
+    m->matmul_cpu();
+    __half *ans = m->D;
+    printf("D:\n");
+    m->print_matrix(m->D, m->m, m->n);
+    // 需要进行im2col rev的data
+    __half *d_rev, *d_dev_out;
+    cudaMalloc((void **)&d_rev, m->m * m->n * sizeof(__half));
+    cudaMalloc((void **)&d_dev_out, m->m * m->n * sizeof(__half));
+    cudaMemcpy(d_rev, ans, m->m * m->n * sizeof(__half), cudaMemcpyHostToDevice);
+    int kernel_num = param->data->n * param->getOut_height() * param->getOut_width();
+    im2col_rev_kernel<<<CAFFE_GET_BLOCKS(kernel_num), CAFFE_CUDA_NUM_THREADS>>>(kernel_num, d_rev, param->data->n, param->kernel->n, param->getOut_height(), param->getOut_width(), d_dev_out);
 
-    float *in = new float[data->n*data->c*data->h*data->w];
-    for (int i = 0; i < data->n*data->c*data->h*data->w;i++) {
-        in[i] = __half2float(data->tensor[i]);
-        //printf("%f ", in[i]);
-    }
-    printf("\n");
-    float *d_in;
-    cudaMalloc((void**) &d_in, data->n*data->c*data->h*data->w*sizeof(float));
-    cudaMemcpy(d_in, in, data->n*data->c*data->h*data->w*sizeof(float), cudaMemcpyHostToDevice);
-
-    float *d_out;
-    cudaMalloc((void**) &d_out, data->n * param->getOut_height() * param->getOut_width() * kernel->c * kernel->h * kernel->w*sizeof(float));
-    float *out = new float[data->n * param->getOut_height() * param->getOut_width() * kernel->c * kernel->h * kernel->w];
-
-    im2col_gpu<float>(d_in, data->n, data->c, data->h, data->w, kernel->h, kernel->w, 1, 1, 1, 1, 1, 1, d_out);
-
-    cudaMemcpy(out, d_out, data->n * param->getOut_height() * param->getOut_width() * kernel->c * kernel->h * kernel->w*sizeof(float), cudaMemcpyDeviceToHost);
-
-    printf("im2col out:\n");
-    for (int i = 0; i < kernel->c * kernel->h * kernel->w; i++) {
-        for (int j = 0; j < data->n * param->getOut_height() * param->getOut_width(); j++) {
-            printf("%d ", int(out[i * data->n * param->getOut_height() * param->getOut_width() + j]));
-        }
-        printf("\n");
-    }
-
-    printf("total: %d | %d", m->m * m->k, data->n * param->getOut_height() * param->getOut_width() * kernel->c * kernel->h * kernel->w);
+    __half *rev_out = new __half[param->data->n * param->kernel->n * param->getOut_height() * param->getOut_width()];
+    cudaMemcpy(rev_out, d_dev_out, m->m * m->n * sizeof(__half), cudaMemcpyDeviceToHost);
+    // ==
+    __half *cpu_rev = m->im2col_rev(param->data->n, param->kernel->n, param->getOut_height(), param->getOut_width())->tensor;
     int cnt = 0;
-    for (int i = 0; i < m->m; i++) {
-        for (int j = 0; j < m->k; j++) {
-            if (c[i * m->k + j] != out[j * m->m + i]) {
-                cnt++;
-                 printf("%d : %d ", int(c[i * m->k + j]), int(out[j * m->m + i]));
-            }
+    printf("total: %d\n", m->m * m->n);
+    for (int i = 0; i < m->m * m->n; i++) {
+        if (__half2int_rz(cpu_rev[i]) != __half2int_rz(rev_out[i])) {
+            cnt++;
+            printf("%d : %d\n", __half2int_rz(cpu_rev[i]), __half2int_rz(rev_out[i]));
         }
     }
-    printf("\ndiff: %d", cnt);
-
-
+    printf("diff: %d\n", cnt);
+    return 0;
 
 //     MatrixParam *m = param->im2col();
 //     m->matmul_cpu();
