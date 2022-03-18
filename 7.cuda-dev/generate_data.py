@@ -195,4 +195,8 @@ if __name__ == '__main__':
 
     ans = np.matmul(data_trans, kernel_trans)
     print(ans)
+    out_h = (data_h + 2 * padding - kernel_h) // stride + 1
+    out_w = (data_w + 2 * padding - kernel_w) // stride + 1
+    ans = ans.reshape(data_n, out_h, out_w, kernel_n).transpose(0, 3, 1, 2)
+    print(ans)
     # ans.tofile('answer.bin')
