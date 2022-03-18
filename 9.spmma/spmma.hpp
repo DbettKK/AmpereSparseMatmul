@@ -82,23 +82,23 @@ void im2col_gpu(const Dtype* data_im, const int data_n, const int channels,
     CUDA_POST_KERNEL_CHECK;
 }
 
-template <typename Dtype>
-__global__ void im2col_rev_kernel(
-    const int n, const Dtype *data, int data_n, int kernel_n, int out_h, int out_w, Dtype *out) {
-    // row: n * out_h * out_w
-    // col: kernel_c * kernel_h * kernel_w
-    // n * out_h * out_w个线程
-    CUDA_KERNEL_LOOP(index, n) {
-        // 每个thread负责一个卷积核对应位置的所有channel
-        int line = index % (data_n * out_h * out_w);
-        int n_index = index / (out_h * out_w);
-        int h_index = (index - n_index * (out_h * out_w)) / out_w;
-        int w_index = (index - n_index * (out_h * out_w)) - h_index * out_w;
-        for (int i = 0; i < kernel_n; i++) {
-            out[n_index * kernel_n * out_h * out_w + i * out_h * out_w + h_index * out_w + w_index] = data[line * kernel_n + i];
-        }
-    }
-}
+//template <typename Dtype>
+//__global__ void im2col_rev_kernel(
+//    const int n, const Dtype *data, int data_n, int kernel_n, int out_h, int out_w, Dtype *out) {
+//    // row: n * out_h * out_w
+//    // col: kernel_c * kernel_h * kernel_w
+//    // n * out_h * out_w个线程
+//    CUDA_KERNEL_LOOP(index, n) {
+//        // 每个thread负责一个卷积核对应位置的所有channel
+//        int line = index % (data_n * out_h * out_w);
+//        int n_index = index / (out_h * out_w);
+//        int h_index = (index - n_index * (out_h * out_w)) / out_w;
+//        int w_index = (index - n_index * (out_h * out_w)) - h_index * out_w;
+//        for (int i = 0; i < kernel_n; i++) {
+//            out[n_index * kernel_n * out_h * out_w + i * out_h * out_w + h_index * out_w + w_index] = data[line * kernel_n + i];
+//        }
+//    }
+//}
 
 template <typename Dtype>
 __global__ void im2col_rev_kernel(

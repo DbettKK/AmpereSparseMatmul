@@ -119,10 +119,10 @@ MatrixParam *spmma_matmul(const __half *matA, const __half *matB, int m_old, int
     ret->B = new __half[k_old * n_old];
     ret->C = new __half[m_old * n_old];
     ret->D = new __half[m_old * n_old];
-    CHECK_CUDA( cudaMemcpy(ret->A, matA, m_old * k_old * sizeof(__half), cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(ret->B, matB, k_old * n_old * sizeof(__half), cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(ret->A, dA, m_old * k_old * sizeof(__half), cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(ret->B, dB, k_old * n_old * sizeof(__half), cudaMemcpyDeviceToHost) )
     memset(ret->C, 0, m_old * n_old);
-    CHECK_CUDA( cudaMemcpy2D(ret->D, n_old * sizeof(__half), dD, n * sizeof(Dtype), n_old * sizeof(Dtype), m_old, cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy2D(ret->D, n_old * sizeof(__half), dD, n * sizeof(__half), n_old * sizeof(__half), m_old, cudaMemcpyDeviceToHost) )
 
     return ret;
 }
