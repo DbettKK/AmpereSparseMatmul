@@ -143,7 +143,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
     printf("im2col: \n");
     for (int i = 0; i < param->kernel->c * param->kernel->h * param->kernel->w; i++) {
         for (int j = 0; j < param->data->n * param->getOut_height() * param->getOut_width(); j++){
-            printf("%d ", tmp_d[i * param->data->n * param->getOut_height() * param->getOut_width() + j]);
+            printf("%d ", __half2int_rz(tmp_d[i * param->data->n * param->getOut_height() * param->getOut_width() + j]));
         }
         printf("\n");
     }
