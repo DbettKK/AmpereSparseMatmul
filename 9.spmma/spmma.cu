@@ -196,7 +196,7 @@ void test_conv() {
         for (int j = 0; j < 1; j++) {
             for (int k = 0; k < out->h; k++) {
                 for (int v = 0; v < out->w; v++) {
-                    printf("%d ", out->tensor[k * out->w + v]);
+                    printf("%d ", 	__half2int_rz(out->tensor[k * out->w + v]));
                 }
                 printf("\n");
             }
