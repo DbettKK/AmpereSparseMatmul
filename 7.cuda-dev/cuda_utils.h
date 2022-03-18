@@ -67,8 +67,8 @@ constexpr int EXIT_UNSUPPORTED = 2;
 const int padding_global = 0;
 const int stride_global = 1;
 
-const int data_n_global = 4, data_c_global = 3, data_w_global = 16, data_h_global = 16;
-const int kernel_n_global = 2, kernel_c_global = 3, kernel_w_global = 3, kernel_h_global = 3;
+const int data_n_global = 4, data_c_global = 3, data_w_global = 256, data_h_global = 256;
+const int kernel_n_global = 64, kernel_c_global = 3, kernel_w_global = 7, kernel_h_global = 7;
 
 const int out_w = (data_w_global + 2 * padding_global - kernel_w_global) / stride_global + 1;
 const int out_h = (data_h_global + 2 * padding_global - kernel_h_global) / stride_global + 1;
@@ -130,7 +130,7 @@ void print_matrix(const int &m, const int &n, const float *A, const int &lda) {
 }
 
 void print_tensor(float *item, int n, int c, int h, int w) {
-    //if (n * c * w * h > 300) return;
+    if (n * c * w * h > 300) return;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < c; j++) {
             for (int k = 0; k < h; k++) {
