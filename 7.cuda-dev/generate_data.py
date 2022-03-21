@@ -160,8 +160,8 @@ def mma():
 
 
 if __name__ == '__main__':
-    data_n, data_c, data_w, data_h = 4, 3, 256, 256
-    kernel_n, kernel_c, kernel_w, kernel_h = 64, 3, 7, 7
+    data_n, data_c, data_w, data_h = 4, 3, 16, 16
+    kernel_n, kernel_c, kernel_w, kernel_h = 2, 3, 3, 3
     padding = 0
     stride = 1
     dtype = 'float32'

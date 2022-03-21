@@ -90,9 +90,23 @@ int main(int argc, char *argv[]) {
     CHECK_CUDA( cudaMemcpyAsync(d_A, A.data(), sizeof(data_type) * A.size(), cudaMemcpyHostToDevice, stream) );
     CHECK_CUDA( cudaMemcpyAsync(d_B, B.data(), sizeof(data_type) * B.size(), cudaMemcpyHostToDevice, stream) );
 
+    // time
+    cudaEvent_t start_time;
+	cudaEvent_t end_time;
+    CHECK_CUDA(cudaEventCreateWithFlags(&start_time, cudaEventBlockingSync));
+	CHECK_CUDA(cudaEventCreateWithFlags(&end_time, cudaEventBlockingSync));
+	CHECK_CUDA(cudaEventCreate(&start_time));
+	CHECK_CUDA(cudaEventCreate(&end_time));
+	CHECK_CUDA(cudaEventRecord(start_time));
+
     /* step 3: compute */
     CHECK_CUBLAS( cublasSgemm(cublasH, transa, transb, m, n, k, &alpha, d_A, lda, d_B, ldb, &beta, d_C, ldc) );
 
+    CHECK_CUDA(cudaEventRecord(end_time));
+	CHECK_CUDA(cudaEventSynchronize(end_time));
+    float total_time;
+    CHECK_CUDA(cudaEventElapsedTime(&total_time, start_time, end_time));
+    printf("cublas took %fms\n", total_time);
     /* step 4: copy data to host */
     CHECK_CUDA( cudaMemcpyAsync(C.data(), d_C, sizeof(data_type) * C.size(), cudaMemcpyDeviceToHost, stream));
 

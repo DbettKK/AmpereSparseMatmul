@@ -1,6 +1,7 @@
 import tvm
 from tvm import te
 
+
 if __name__ == '__main__':
     n = te.var("n")
     A = te.placeholder((n,), name='A')

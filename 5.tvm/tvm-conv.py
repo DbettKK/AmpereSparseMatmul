@@ -1,87 +1,139 @@
+import numpy as np
 import tvm
 from tvm import te
-import numpy as np
 
+# The sizes of inputs and filters
+# batch = 256
+# in_channel = 256
+# out_channel = 512
+# in_size = 14
+# kernel = 3
+# pad = 1
+# stride = 1
 
-def im2col(input_data: np.ndarray, filter_h, filter_w, stride=1, pad=0) -> np.ndarray:
-    """
-    Parameters
-    ----------
-    input_data : 由(数据量, 通道, 高, 长)的4维数组构成的输入数据
-    filter_h : 滤波器的高
-    filter_w : 滤波器的长
-    stride : 步幅
-    pad : 填充
+batch = 4
+in_channel = 3
+out_channel = 2
+in_size = 16
+kernel = 3
+pad = 0
+stride = 1
 
-    Returns
-    -------
-    col : 2维数组
-    """
-    N, C, H, W = input_data.shape
-    out_h = (H + 2 * pad - filter_h) // stride + 1  # 输出矩阵的高
-    out_w = (W + 2 * pad - filter_w) // stride + 1  # 输出矩阵的宽
+# Algorithm
+A = te.placeholder((in_size, in_size, in_channel, batch), name="A")
+W = te.placeholder((kernel, kernel, in_channel, out_channel), name="W")
+out_size = (in_size - kernel + 2 * pad) // stride + 1
+# Pad input
+Apad = te.compute(
+    (in_size + 2 * pad, in_size + 2 * pad, in_channel, batch),
+    lambda yy, xx, cc, nn: tvm.tir.if_then_else(
+        tvm.tir.all(yy >= pad, yy - pad < in_size, xx >= pad, xx - pad < in_size),
+        A[yy - pad, xx - pad, cc, nn],
+        tvm.tir.const(0.0, "float32"),
+    ),
+    name="Apad",
+)
+# Create reduction variables 可以理解为对该轴进行一个求和
+rc = te.reduce_axis((0, in_channel), name="rc")
+ry = te.reduce_axis((0, kernel), name="ry")
+rx = te.reduce_axis((0, kernel), name="rx")
+# Compute the convolution
+B = te.compute(
+    (out_size, out_size, out_channel, batch),
+    lambda yy, xx, ff, nn: te.sum(
+        Apad[yy * stride + ry, xx * stride + rx, rc, nn] * W[ry, rx, rc, ff], axis=[ry, rx, rc]
+    ),
+    name="B",
+)
 
-    img = np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], 'constant')
-    col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
+# Designate the memory hierarchy
+s = te.create_schedule(B.op)
+s[Apad].compute_inline()  # compute Apad inline
+AA = s.cache_read(Apad, "shared", [B])  # 加载到shared memory
+WW = s.cache_read(W, "shared", [B])
+AL = s.cache_read(AA, "local", [B])     # 加载到线程local memory
+WL = s.cache_read(WW, "local", [B])
+BL = s.cache_write(B, "local")
 
-    for y in range(filter_h):
-        y_max = y + stride * out_h
-        for x in range(filter_w):
-            x_max = x + stride * out_w
-            col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]
+# tile consts
+tile = 8
+num_thread = 8
+block_factor = tile * num_thread
+step = 8
+vthread = 2
 
-    col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
-    return col
+# Get the GPU thread indices
+block_x = te.thread_axis("blockIdx.x")
+block_y = te.thread_axis("blockIdx.y")
+block_z = te.thread_axis("blockIdx.z")
+thread_x = te.thread_axis((0, num_thread), "threadIdx.x")
+thread_y = te.thread_axis((0, num_thread), "threadIdx.y")
+thread_xz = te.thread_axis((0, vthread), "vthread", name="vx")
+thread_yz = te.thread_axis((0, vthread), "vthread", name="vy")
 
+# Split the workloads
+hi, wi, fi, ni = s[B].op.axis
+bz = s[B].fuse(hi, wi)
+by, fi = s[B].split(fi, factor=block_factor)
+bx, ni = s[B].split(ni, factor=block_factor)
 
-def generate_data(data_shape: list, core_shape: list) -> (np.ndarray, np.ndarray):
-    data_h, data_w = data_shape
-    core_h, core_w = core_shape
-    data = np.arange(data_h * data_w, dtype=int).reshape(data_h, data_w)
-    core = np.ones(core_h * core_w, dtype=int).reshape(core_h, core_w)
-    return data, core
+# Bind the iteration variables to GPU thread indices
+s[B].bind(bz, block_z)
+s[B].bind(by, block_y)
+s[B].bind(bx, block_x)
 
+tyz, fi = s[B].split(fi, nparts=vthread)  # virtual thread split
+txz, ni = s[B].split(ni, nparts=vthread)  # virtual thread split
+ty, fi = s[B].split(fi, nparts=num_thread)
+tx, ni = s[B].split(ni, nparts=num_thread)
+s[B].reorder(bz, by, bx, tyz, txz, ty, tx, fi, ni)
 
-def im2col_self(data: np.ndarray, core: np.ndarray) -> (np.ndarray, np.ndarray):
-    input_data = data.reshape(1, 1, data.shape[0], data.shape[1])
-    out_size = data.shape[0] - core.shape[0] + 1
-    transfer_data = im2col(input_data, core.shape[0], core.shape[1])
-    transfer_core = core.reshape(core.shape[0]*core.shape[1], 1)
-    return transfer_data, transfer_core
+s[B].bind(tyz, thread_yz)
+s[B].bind(txz, thread_xz)
+s[B].bind(ty, thread_y)
+s[B].bind(tx, thread_x)
 
+# Schedule BL local write
+s[BL].compute_at(s[B], tx)
+yi, xi, fi, ni = s[BL].op.axis
+ry, rx, rc = s[BL].op.reduce_axis
+rco, rci = s[BL].split(rc, factor=step)
+s[BL].reorder(rco, ry, rx, rci, fi, ni)
 
-def get_target() -> (tvm.target.target.Target, tvm.runtime.ndarray):
-    target = tvm.target.Target(target="llvm", host="llvm")
-    device = tvm.device(target.kind.name, 0)
-    return target, device
+# Attach computation to iteration variables
+s[AA].compute_at(s[BL], rx)
+s[WW].compute_at(s[BL], rx)
+s[AL].compute_at(s[BL], rci)
+s[WL].compute_at(s[BL], rci)
 
+# Schedule for A's shared memory load
+yi, xi, ci, ni = s[AA].op.axis
+ty, ci = s[AA].split(ci, nparts=num_thread)
+tx, ni = s[AA].split(ni, nparts=num_thread)
+_, ni = s[AA].split(ni, factor=4)
+s[AA].reorder(ty, tx, yi, xi, ci, ni)
+s[AA].bind(ty, thread_y)
+s[AA].bind(tx, thread_x)
+s[AA].vectorize(ni)  # vectorize memory load
 
-def tensor_expr(data: np.ndarray, core: np.ndarray, target: tvm.target.target.Target, device: tvm.runtime.ndarray):
-    if data.shape[1] != core.shape[0]:
-        print("shape不匹配")
-        exit(0)
-    M, K, N = data.shape[0], data.shape[1], core.shape[1]
-    k = te.reduce_axis((0, K), "k")
-    Data = te.placeholder((M, K), name="Data")
-    Core = te.placeholder((K, N), name="Core")
-    Out = te.compute((M, N), lambda x, y: te.sum(Data[x, k] * Core[k, y], axis=k), name="Out")
-    # 调度
-    sche = te.create_schedule(Out.op)
-    func_conv = tvm.build(sche, [Data, Core, Out], target=target, name="conv")
-    run_data = tvm.nd.array(data.astype(dtype="float32"), device)
-    run_core = tvm.nd.array(core.astype(dtype="float32"), device)
-    run_out = tvm.nd.array(np.zeros((M, N), dtype="float32"), device)
-    func_conv(run_data, run_core, run_out)
-    print(run_out.numpy().reshape(4, 4))
-    print(func_conv.get_source())
+# Schedule for W's shared memory load
+yi, xi, ci, fi = s[WW].op.axis
+ty, ci = s[WW].split(ci, nparts=num_thread)
+tx, fi = s[WW].split(fi, nparts=num_thread)
+_, fi = s[WW].split(fi, factor=4)
+s[WW].reorder(ty, tx, yi, xi, ci, fi)
+s[WW].bind(ty, thread_y)
+s[WW].bind(tx, thread_x)
+s[WW].vectorize(fi)  # vectorize memory load
 
-
-def main():
-    data, core = generate_data([5, 5], [2, 2])
-    trans_data, trans_core = im2col_self(data, core)
-    tat, dev = get_target()
-    tensor_expr(trans_data, trans_core, tat, dev)
-
-
-if __name__ == "__main__":
-    main()
+func = tvm.build(s, [A, W, B], "cuda")
+dev = tvm.cuda(0)
+a_np = np.random.uniform(size=(in_size, in_size, in_channel, batch)).astype(A.dtype)
+w_np = np.random.uniform(size=(kernel, kernel, in_channel, out_channel)).astype(W.dtype)
+a = tvm.nd.array(a_np, dev)
+w = tvm.nd.array(w_np, dev)
+b = tvm.nd.array(np.zeros((out_size, out_size, out_channel, batch), dtype=B.dtype), dev)
+func(a, w, b)
+evaluator = func.time_evaluator(func.entry_name, dev, number=1)
+print("Convolution: %f ms" % (evaluator(a, w, b).mean * 1e3))
+print(func.imported_modules[0].get_source())

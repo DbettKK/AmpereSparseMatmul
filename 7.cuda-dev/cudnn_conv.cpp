@@ -33,6 +33,17 @@ int main() {
     cout << "input: " << endl;
     print_tensor(input, data_n, data_c, data_h, data_w);
 
+    // time
+    cudaEvent_t start_time;
+	cudaEvent_t end_time;
+
+    CHECK_CUDA(cudaEventCreateWithFlags(&start_time, cudaEventBlockingSync));
+	CHECK_CUDA(cudaEventCreateWithFlags(&end_time, cudaEventBlockingSync));
+	CHECK_CUDA(cudaEventCreate(&start_time));
+	CHECK_CUDA(cudaEventCreate(&end_time));
+
+    CHECK_CUDA(cudaEventRecord(start_time));
+
     cudnnTensorDescriptor_t input_descriptor;
     CHECK_CUDNN( cudnnCreateTensorDescriptor(&input_descriptor) )
     CHECK_CUDNN( cudnnSetTensor4dDescriptor(input_descriptor,
@@ -157,6 +168,15 @@ int main() {
     CHECK_CUDNN(cudnnDestroyFilterDescriptor(kernel_descriptor))
 
     CHECK_CUDNN(cudnnDestroy(handle))
+
+    //time
+    CHECK_CUDA(cudaEventRecord(end_time));
+	CHECK_CUDA(cudaEventSynchronize(end_time));
+    float total_time;
+    CHECK_CUDA(cudaEventElapsedTime(&total_time, start_time, end_time));
+    printf("cudnn took %fms\n", total_time);
+
+
 
     cout << "output: " << endl;
     print_tensor(output, out_n, out_c, out_h, out_w);
