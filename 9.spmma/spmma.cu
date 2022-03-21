@@ -122,6 +122,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     CHECK_CUDA( cudaMemcpy(ret->A, dA, m_old * k_old * sizeof(__half), cudaMemcpyDeviceToHost) )
     CHECK_CUDA( cudaMemcpy(ret->B, dB, k_old * n_old * sizeof(__half), cudaMemcpyDeviceToHost) )
     memset(ret->C, 0, m_old * n_old);
+    // padding后的fix
     CHECK_CUDA( cudaMemcpy2D(ret->D, n_old * sizeof(__half), dD, n * sizeof(__half), n_old * sizeof(__half), m_old, cudaMemcpyDeviceToHost) )
 
     return ret;
@@ -206,7 +207,9 @@ void test_conv() {
     }
 }
 
-
+// todo: 接口更加优雅
+// todo: 测试更简单
+// todo: tvm还没测
 int main() {
     test_conv();
 }
