@@ -223,8 +223,8 @@ void test_matmul() {
 }
 
 void test_conv() {
-    int data_n = 4, data_c = 3, data_h = 256, data_w = 256;
-    int kernel_n = 64, kernel_c = 3, kernel_h = 7, kernel_w = 7;
+    int data_n = 4, data_c = 3, data_h = 16, data_w = 16;
+    int kernel_n = 64, kernel_c = 3, kernel_h = 3, kernel_w = 3;
     Tensor4d *data = new Tensor4d(data_n, data_c, data_h, data_w);
     Tensor4d *kernel = new Tensor4d(kernel_n, kernel_c, kernel_h, kernel_w);
     data->read_bin("data.bin");
