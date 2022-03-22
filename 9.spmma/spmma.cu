@@ -95,10 +95,12 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     // 对compress后的进行拆分
     __half *data_cmpr = new __half[compressed_size]; // data部分
     cudaMemcpy(data_cmpr, dA_compressed, compressed_size, cudaMemcpyDeviceToHost);
+    printf("cmpr_size: %d\n", compressed_size);
+    printf("m * k: %d\n", m * k);
     printf("data_cmpr:\n");
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < k / 2; j++) {
-            printf("%d ", __half2int_rz(data_cmpr[i]));
+            printf("%d ", __half2int_rz(data_cmpr[i * k / 2 + j]));
         }
         printf("\n");
     }
