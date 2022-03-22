@@ -32,4 +32,9 @@ int row = blockIdx.y * blockDim.y + threadIdx.y;
 ![img.png](learn/img.png)
 
 
+## global memory
 
+对于全局存储器的访问，kernel循环遍历一行时，要比遍历一列的效率低得多。
+
+当同一个warp中的所有线程都执行同一条指令访问全局存储器中连续的单元时，就获得最有利的访问模式。
+硬件检测到同一个warp中的这些线程访问全局存储器中连续的存储单元，并将这些单元结合成一个合并的访问。

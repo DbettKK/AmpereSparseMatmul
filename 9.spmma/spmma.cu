@@ -91,6 +91,24 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     CHECK_CUSPARSE( cusparseLtSpMMACompressedSize(&handle, &plan, &compressed_size) )
     CHECK_CUDA( cudaMalloc((void**) &dA_compressed, compressed_size) )
     CHECK_CUSPARSE( cusparseLtSpMMACompress(&handle, &plan, dA, dA_compressed, stream) )
+
+    // 对compress后的进行拆分
+    __half *data_cmpr = new __half[compressed_size]; // data部分
+    cudaMemcpy(data_cmpr, dA_compressed, compressed_size, cudaMemcpyDeviceToHost);
+    printf("data_cmpr:\n");
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < k / 2; j++) {
+            printf("%d ", __half2int_rz(data_cmpr[i]));
+        }
+        printf("\n");
+    }
+    printf("index:\n");
+    for (int i = m * k / 2; i < compressed_size / sizeof(__half); i++) {
+        int item = __half2int_rz(data_cmpr[i])
+        decimal2binary(item);
+        printf("\n")
+    }
+
     //--------------------------------------------------------------------------
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,7 +228,9 @@ Tensor4d *spmma_conv(ConvParam *param) {
 void test_matmul() {
     int m = 16, k = 16, n = 16;
     MatrixParam *param = new MatrixParam(m, k, n);
-    param->read_bin("a.bin", "b.bin", "c.bin");
+    param->generate_rand(10);
+    printf("A:\n");
+    param->print_matrix(param->A, param->m, param->k);
     __half *dA, *dB;
     cudaMalloc((void **)&dA, m * k * sizeof(__half));
     cudaMalloc((void **)&dB, k * n * sizeof(__half));
@@ -251,5 +271,5 @@ void test_conv() {
 // todo: 测试更简单
 // todo: tvm还没测
 int main() {
-    test_conv();
+    test_matmul();
 }

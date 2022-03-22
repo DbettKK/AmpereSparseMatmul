@@ -56,3 +56,11 @@ const spmmaStatus_t SUCCESS = 0;
 const spmmaStatus_t DO_NOTHING = 1;
 const spmmaStatus_t ERROR = 2;
 const spmmaStatus_t UNSUPPORTED = 3;
+
+void decimal2binary(int num)
+{
+    if (num > 0) {	// 判断是否大于0
+        ten2binary(num >> 1);        // 递归调用，寻找不为0的最高位
+        printf("%u", num & 1);      // 找到最高位后才开始输出
+    }
+}
