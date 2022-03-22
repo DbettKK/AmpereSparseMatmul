@@ -61,6 +61,6 @@ void decimal2binary(int num)
 {
     if (num > 0) {	// 判断是否大于0
         decimal2binary(num >> 1);        // 递归调用，寻找不为0的最高位
-        printf("%u", num & 1);      // 找到最高位后才开始输出
+        printf("%d", num & 1);      // 找到最高位后才开始输出
     }
 }
