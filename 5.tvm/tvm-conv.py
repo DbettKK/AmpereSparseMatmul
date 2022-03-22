@@ -13,9 +13,9 @@ from tvm import te
 
 batch = 4
 in_channel = 3
-out_channel = 2
-in_size = 16
-kernel = 3
+out_channel = 64
+in_size = 256
+kernel = 7
 pad = 0
 stride = 1
 

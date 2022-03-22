@@ -147,6 +147,17 @@ int main() {
     CHECK_CUDA( cudaMemcpy(d_kernel, kernel, kernel_size, cudaMemcpyHostToDevice) )
 
 
+    // time2
+    cudaEvent_t start_c_time;
+	cudaEvent_t end_c_time;
+
+    CHECK_CUDA(cudaEventCreateWithFlags(&start_c_time, cudaEventBlockingSync));
+	CHECK_CUDA(cudaEventCreateWithFlags(&end_c_time, cudaEventBlockingSync));
+	CHECK_CUDA(cudaEventCreate(&start_c_time));
+	CHECK_CUDA(cudaEventCreate(&end_c_time));
+
+    CHECK_CUDA(cudaEventRecord(start_c_time));
+
     // calculate
     CHECK_CUDNN( cudnnConvolutionForward(handle,
                             &alpha, input_descriptor, d_input,
@@ -155,7 +166,12 @@ int main() {
                             workspace, workspace_size,
                             &beta, output_descriptor, d_output) )
 
-
+    //time2
+    CHECK_CUDA(cudaEventRecord(end_c_time));
+	CHECK_CUDA(cudaEventSynchronize(end_c_time));
+    float total_c_time;
+    CHECK_CUDA(cudaEventElapsedTime(&total_c_time, start_c_time, end_c_time));
+    printf("cudnn calculate took %fms\n", total_c_time);
 
     CHECK_CUDA( cudaMemcpy(output, d_output, out_size, cudaMemcpyDeviceToHost) )
 
