@@ -96,7 +96,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     __half *data_cmpr = new __half[compressed_size / sizeof(__half) / 2]; // data部分
     int *index = (int *)malloc(compressed_size / 2);
     cudaMemcpy(data_cmpr, dA_compressed, compressed_size / 2, cudaMemcpyDeviceToHost);
-    cudaMemcpy(index, dA_compressed + compressed_size / sizeof(__half) / 2, compressed_size / 2, cudaMemcpyDeviceToHost);
+    cudaMemcpy(index, dA_compressed + compressed_size / sizeof(void) / 2, compressed_size / 2, cudaMemcpyDeviceToHost);
 
     printf("cmpr_size: %d\n", compressed_size);
     printf("m * k: %d\n", m * k);
