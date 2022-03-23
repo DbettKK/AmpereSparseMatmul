@@ -61,10 +61,9 @@ template <typename Dtype>
 void decimal2binary(Dtype num, int byteNum) {
     int *bottle = new int[byteNum];
     for (int i = 0; i < byteNum; i++) {
-        if (num > 0) {
-            bottle[i] = num & 1;
-            num = num >> 1;
-        } else bottle[i] = 0;
+        bottle[i] = num & 1;
+        num = num >> 1;
+
     }
     for (int i = byteNum - 1; i >= 0; i--) {
         if ((i + 1) % 4 == 0) printf(" ");
