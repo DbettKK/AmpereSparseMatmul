@@ -67,7 +67,7 @@ void decimal2binary(Dtype num, int byteNum) {
         } else bottle[i] = 0;
     }
     for (int i = byteNum - 1; i >= 0; i--) {
-        if (i % 4 == 0 && i > 0) printf(" ");
+        if ((i + 1) % 4 == 0) printf(" ");
         printf("%d", bottle[i]);
     }
 }
