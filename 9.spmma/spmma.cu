@@ -110,7 +110,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     printf("index:\n");
     for (int i = 0; i < compressed_size / 2 / sizeof(int); i++) {
         if (index[i] == -286331154) continue;
-        printf("%d:", index[i]);
+        printf("%d: %d:", i, index[i]);
         decimal2binary(index[i], 32);
         printf("\n");
     }
