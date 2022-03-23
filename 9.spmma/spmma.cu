@@ -108,7 +108,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     }
 
     printf("index:\n");
-    for (int i = m * k / 2; i < compressed_size / 2 / sizeof(int); i++) {
+    for (int i = 0; i < compressed_size / 2 / sizeof(int); i++) {
         printf("%d:", index[i]);
         decimal2binary(index[i], 32);
         printf("\n");
