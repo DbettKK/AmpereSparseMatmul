@@ -160,6 +160,8 @@ def mma():
 
 
 if __name__ == '__main__':
+    mma()
+    sys.exit(0)
     data_n, data_c, data_w, data_h = 4, 3, 16, 16
     kernel_n, kernel_c, kernel_w, kernel_h = 64, 3, 3, 3
     padding = 0

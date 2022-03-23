@@ -57,10 +57,17 @@ const spmmaStatus_t DO_NOTHING = 1;
 const spmmaStatus_t ERROR = 2;
 const spmmaStatus_t UNSUPPORTED = 3;
 
-void decimal2binary(int num)
-{
-    if (num > 0) {	// 判断是否大于0
-        decimal2binary(num >> 1);        // 递归调用，寻找不为0的最高位
-        printf("%d", num & 1);      // 找到最高位后才开始输出
+template <typename Dtype>
+void decimal2binary(Dtype num, int byteNum) {
+    int *bottle = new int[byteNum];
+    for (int i = 0; i < byteNum; i++) {
+        if (num > 0) {
+            bottle[i] = num & 1;
+            num = num >> 1;
+        } else bottle[i] = 0;
+    }
+    for (int i = byteNum - 1; i >= 0; i--) {
+        if (i % 4 == 0 && i > 0) printf(" ");
+        printf("%d", bottle[i]);
     }
 }
