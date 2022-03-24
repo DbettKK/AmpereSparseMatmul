@@ -151,11 +151,14 @@ struct Tensor4d {
 
 struct MatrixParam {
     __half *A, *B, *C, *D;
+    __half *A_cmpr;
+    int *index;
     int m, k, n;
+
     MatrixParam(__half *A=nullptr, __half *B=nullptr, __half *C=nullptr, __half *D=nullptr, int m=0, int k=0, int n=0):
         A(A), B(B), C(C), D(D), m(m), k(k), n(n) {}
 
-    MatrixParam(int m=0, int k=0, int n=0): A(nullptr), B(nullptr), C(nullptr), D(nullptr), m(m), k(k), n(n) {}
+    MatrixParam(int m=0, int k=0, int n=0): A(nullptr), B(nullptr), C(nullptr), D(nullptr), A_cmpr(nullptr), index(nullptr), m(m), k(k), n(n) {}
 
     void print_matrix(__half *item, int row, int col) {
         for (int i = 0; i < row; i++) {
@@ -385,6 +388,25 @@ struct MatrixParam {
         }
         for (int i = 0; i < m * n; i++) {
             C[i] = static_cast<__half>(static_cast<float>(0));
+        }
+        return ret;
+    }
+
+    void generate_rand(int bound) {
+        if (A == nullptr)  A = new __half[m * k];
+        if (B == nullptr)  B = new __half[k * n];
+        if (C == nullptr)  C = new __half[m * n];
+        if (A_cmpr == nullptr)  A_cmpr = new __half[m * k / 2];
+        // byte: m * (k/2) * sizeof(__half)
+        // sizeof(__half) = 2, sizeof(int) = 4
+        if (index == nullptr)  index = new int[m * k / 4];
+
+        // todo: A
+        for (int i = 0; i < k * n; i++) {
+            B[i] = __int2half_rn(rand() % bound);
+        }
+        for (int i = 0; i < m * n; i++) {
+            C[i] = __int2half_rn(0);
         }
         return ret;
     }

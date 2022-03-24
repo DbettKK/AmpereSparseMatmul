@@ -70,3 +70,13 @@ void decimal2binary(Dtype num, int byteNum) {
         printf("%d", bottle[i]);
     }
 }
+
+short convertIdx2Binary(int *index, int len) {
+    short ret = 0;
+    for (int i = len - 1; i >= 0; i--) {
+        int item = index[i];
+        ret = ret << 2;
+        ret |= item;
+    }
+    return ret;
+}
