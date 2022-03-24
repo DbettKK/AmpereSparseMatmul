@@ -1,9 +1,9 @@
 all: spmma spmma_oo spmma_static cudnn cublas
 
-spmma: spmma.cpp
+spmma: old_code/spmma.cpp
 	nvcc spmma.cpp -o spmma -lcusparseLt -lcusparse
 
-spmma_oo: spmma_oo.cpp
+spmma_oo: old_code/spmma_oo.cpp
 	nvcc spmma_oo.cpp -o spmma_oo -lcusparseLt -lcusparse
 
 cudnn: cudnn_conv.cpp
@@ -17,7 +17,7 @@ data: generate_data.py
 
 # -Xlinker=--whole-archive: 将后面库中所有符号都链接进来
 # -Xlinker=--no-whole-archive: 避免后面库的所有符号被链接进来
-spmma_static: spmma.cpp
+spmma_static: old_code/spmma.cpp
 	nvcc spmma.cpp -o spmma_static -Xlinker=--whole-archive -Xlinker=/lib64/libcusparseLt_static.a -Xlinker=--no-whole-archive -lcusparse
 
 profile_spmma:
