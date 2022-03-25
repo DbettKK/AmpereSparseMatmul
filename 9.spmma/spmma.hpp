@@ -409,7 +409,7 @@ struct MatrixParam {
         for (int i = 0; i < m * n; i++) {
             C[i] = __int2half_rn(0);
         }
-        return ret;
+
     }
 };
 
