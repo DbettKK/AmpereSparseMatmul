@@ -146,16 +146,16 @@ def mtest(data_num, kernel_num):
 
 
 def mma():
-    m, n, k = 16, 16, 16
+    m, k, n = 8, 32, 8
     dtype = 'float32'
     A = make_sparse_mat(m, k, False, dtype)
     B = make_dense_mat(k, n,  dtype)
     C = make_zero_mat(m, n, dtype)
     B_cmpr = get_compressed_mat(A)
-    A.tofile('../9.spmma/a.bin')
-    B_cmpr.tofile('../9.spmma/bc.bin')
-    B.tofile('../9.spmma/b.bin')
-    C.tofile('../9.spmma/c.bin')
+    A.tofile('../9.spmma/bin/a.bin')
+    B_cmpr.tofile('../9.spmma/bin/bc.bin')
+    B.tofile('../9.spmma/bin/b.bin')
+    C.tofile('../9.spmma/bin/c.bin')
     print(np.matmul(A, B))
 
 

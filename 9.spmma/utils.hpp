@@ -80,3 +80,4 @@ short convertIdx2Binary(int *index, int len) {
     }
     return ret;
 }
+

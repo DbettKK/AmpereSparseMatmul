@@ -402,6 +402,7 @@ struct MatrixParam {
         if (index == nullptr)  index = new int[m * k / 4];
 
         // todo: A
+        
         for (int i = 0; i < k * n; i++) {
             B[i] = __int2half_rn(rand() % bound);
         }
