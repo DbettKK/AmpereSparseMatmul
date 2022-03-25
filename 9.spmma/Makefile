@@ -1,6 +1,6 @@
 all: spmma
 
-spmma:
+spmma: spmma.cu
 	nvcc spmma.cu -o spmma -lcusparse -lcusparseLt
 
 test:
