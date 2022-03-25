@@ -146,7 +146,7 @@ def mtest(data_num, kernel_num):
 
 
 def mma():
-    m, k, n = 8, 32, 8
+    m, k, n = 8, 64, 8
     dtype = 'float32'
     A = make_sparse_mat(m, k, False, dtype)
     B = make_dense_mat(k, n,  dtype)
