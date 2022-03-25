@@ -95,8 +95,9 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     // 对compress后的进行拆分
     __half *data_cmpr = new __half[compressed_size / sizeof(__half)]; // data部分
     int *index = (int *)malloc(compressed_size / 2);
-    cudaMemcpy(data_cmpr, dA_compressed, compressed_size / 2, cudaMemcpyDeviceToHost);
-    cudaMemcpy(index, dA_compressed + m * k / 2, compressed_size / 2, cudaMemcpyDeviceToHost);
+    size_t index_t = compressed_size - m * k / 2 * sizeof(__half);
+    cudaMemcpy(data_cmpr, dA_compressed, m * k / 2 * sizeof(__half), cudaMemcpyDeviceToHost);
+    cudaMemcpy(index, dA_compressed + m * k / 2, index_t, cudaMemcpyDeviceToHost);
     printf("cmpr_size: %d\n", compressed_size);
     printf("m * k: %d\n", m * k);
     printf("data_cmpr:\n");
@@ -108,7 +109,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     }
 
     printf("index:\n");
-    for (int i = 0; i < compressed_size / 2 / sizeof(int); i++) {
+    for (int i = 0; i < index_t / sizeof(int); i++) {
         if (index[i] == -286331154) continue;
         printf("%d: %d:", i, index[i]);
         decimal2binary(index[i], 32);
