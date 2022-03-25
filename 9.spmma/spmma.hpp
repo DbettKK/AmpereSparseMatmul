@@ -392,7 +392,7 @@ struct MatrixParam {
         return ret;
     }
 
-    void generate_rand(int bound) {
+    void generate_rand_2(int bound) {
         if (A == nullptr)  A = new __half[m * k];
         if (B == nullptr)  B = new __half[k * n];
         if (C == nullptr)  C = new __half[m * n];
