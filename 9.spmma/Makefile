@@ -12,4 +12,4 @@ profile:
 clean:
 	rm ./spmma *report
 
-.PHONY profile clean test
+.PHONY: profile clean test
