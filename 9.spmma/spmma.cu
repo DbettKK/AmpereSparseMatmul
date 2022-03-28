@@ -153,6 +153,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
 //     printf("cusparselt calculate took %fms\n", total_c_time);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    printf("?\n");
     // destroy plan and handle
     CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matA) )
     CHECK_CUSPARSE( cusparseLtMatDescriptorDestroy(&matB) )
