@@ -112,7 +112,6 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     printf("index:\n");
     printf("max_index: %d\n", index_t / sizeof(int));
     for (int i = 0; i < index_t / sizeof(int); i++) {
-        printf("%d:\n", i);
         if (index[i] == -286331154) continue;
         printf("%d: %d:", i, index[i]);
         decimal2binary(index[i], 32);
@@ -236,7 +235,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
 }
 
 void test_matmul() {
-    int m = 8, k = 16, n = 8;
+    int m = 128, k = 128, n = 8;
     MatrixParam *param = new MatrixParam(m, k, n);
     param->read_bin("bin/a.bin", "bin/b.bin", "bin/c.bin");
     printf("A:\n");
