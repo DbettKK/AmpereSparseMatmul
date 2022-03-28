@@ -112,6 +112,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     printf("index:\n");
     printf("max_index: %d\n", index_t / sizeof(int));
     for (int i = 0; i < index_t / sizeof(int); i++) {
+        printf("%d:\n", i);
         if (index[i] == -286331154) continue;
         printf("%d: %d:", i, index[i]);
         decimal2binary(index[i], 32);
