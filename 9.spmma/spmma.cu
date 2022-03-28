@@ -235,7 +235,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
 }
 
 void test_matmul() {
-    int m = 16, k = 16, n = 16;
+    int m = 64, k = 64, n = 8;
     MatrixParam *param = new MatrixParam(m, k, n);
     param->read_bin("bin/a.bin", "bin/b.bin", "bin/c.bin");
     printf("A:\n");
