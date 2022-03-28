@@ -117,7 +117,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
         decimal2binary(index[i], 32);
         printf("\n");
     }
-    printf("?:\n");
+    CHECK_CUDA(cudaPeekAtLastError())
     //--------------------------------------------------------------------------
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
