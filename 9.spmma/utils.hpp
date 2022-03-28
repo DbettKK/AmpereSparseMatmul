@@ -69,6 +69,7 @@ void decimal2binary(Dtype num, int byteNum) {
         if ((i + 1) % 4 == 0) printf(" ");
         printf("%d", bottle[i]);
     }
+    delete[] bottle;
 }
 
 short convertIdx2Binary(int *index, int len) {
