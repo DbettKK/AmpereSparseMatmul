@@ -166,8 +166,8 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     ret->B = new __half[k_old * n_old];
     ret->C = new __half[m_old * n_old];
     ret->D = new __half[m_old * n_old];
-    CHECK_CUDA( cudaMemcpy(ret->A, matA, m_old * k_old * sizeof(__half), cudaMemcpyDeviceToHost) )
-    CHECK_CUDA( cudaMemcpy(ret->B, matB, k_old * n_old * sizeof(__half), cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(ret->A, matA_h, m_old * k_old * sizeof(__half), cudaMemcpyDeviceToHost) )
+    CHECK_CUDA( cudaMemcpy(ret->B, matB_h, k_old * n_old * sizeof(__half), cudaMemcpyDeviceToHost) )
     memset(ret->C, 0, m_old * n_old);
     // padding后的fix
     CHECK_CUDA( cudaMemcpy2D(ret->D, n_old * sizeof(__half), dD, n * sizeof(__half), n_old * sizeof(__half), m_old, cudaMemcpyDeviceToHost) )
