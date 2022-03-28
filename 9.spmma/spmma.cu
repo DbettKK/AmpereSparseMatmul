@@ -132,25 +132,25 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Perform the matrix multiplication
 
-//      // time
-//     cudaEvent_t start_c_time;
-// 	cudaEvent_t end_c_time;
-//
-//     CHECK_CUDA(cudaEventCreateWithFlags(&start_c_time, cudaEventBlockingSync));
-// 	CHECK_CUDA(cudaEventCreateWithFlags(&end_c_time, cudaEventBlockingSync));
-// 	CHECK_CUDA(cudaEventCreate(&start_c_time));
-// 	CHECK_CUDA(cudaEventCreate(&end_c_time));
-//
-//     CHECK_CUDA(cudaEventRecord(start_c_time));
+     // time
+    cudaEvent_t start_c_time;
+	cudaEvent_t end_c_time;
+
+    CHECK_CUDA(cudaEventCreateWithFlags(&start_c_time, cudaEventBlockingSync));
+	CHECK_CUDA(cudaEventCreateWithFlags(&end_c_time, cudaEventBlockingSync));
+	CHECK_CUDA(cudaEventCreate(&start_c_time));
+	CHECK_CUDA(cudaEventCreate(&end_c_time));
+
+    CHECK_CUDA(cudaEventRecord(start_c_time));
 
     CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
 
-//     //time
-//     CHECK_CUDA(cudaEventRecord(end_c_time));
-// 	CHECK_CUDA(cudaEventSynchronize(end_c_time));
-//     float total_c_time;
-//     CHECK_CUDA(cudaEventElapsedTime(&total_c_time, start_c_time, end_c_time));
-//     printf("cusparselt calculate took %fms\n", total_c_time);
+    //time
+    CHECK_CUDA(cudaEventRecord(end_c_time));
+	CHECK_CUDA(cudaEventSynchronize(end_c_time));
+    float total_c_time;
+    CHECK_CUDA(cudaEventElapsedTime(&total_c_time, start_c_time, end_c_time));
+    printf("cusparselt calculate took %fms\n", total_c_time);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -235,7 +235,7 @@ Tensor4d *spmma_conv(ConvParam *param) {
 }
 
 void test_matmul() {
-    int m = 8, k = 16, n = 8;
+    int m = 16, k = 16, n = 8;
     MatrixParam *param = new MatrixParam(m, k, n);
     param->read_bin("bin/a.bin", "bin/b.bin", "bin/c.bin");
     printf("A:\n");
