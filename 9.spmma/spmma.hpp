@@ -148,12 +148,6 @@ struct Tensor4d {
         cudaMemcpy(tensor, d_data, size * sizeof(__half), cudaMemcpyDeviceToHost);
     }
 
-    size_t get_cmpr_size() {
-        // byte数
-        int row = m % 32 ? m / 32 : m / 32 + 1;
-        int col = k % 32 ? k / 32 : k / 32 + 1;
-        return row * col * 32 * 32 / 8 > 256 ? row * col * 32 * 32 / 8 : 256;
-    }
 };
 
 struct MatrixParam {
