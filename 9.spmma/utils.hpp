@@ -81,3 +81,8 @@ short convertIdx2Binary(int *index, int len) {
     return ret;
 }
 
+size_t get_cmpr_size(int row, int col) {
+    int row_blocks = row % 32 ? row / 32 : row / 32 + 1;
+    int col_blocks = col % 32 ? col / 32 : col / 32 + 1;
+    return row_blocks * col_blocks * 32 * 32 / 8 > 256 ? row_blocks * col_blocks * 32 * 32 / 8 : 256;
+}

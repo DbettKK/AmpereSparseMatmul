@@ -147,6 +147,13 @@ struct Tensor4d {
         if (tensor == nullptr) tensor = new __half[size];
         cudaMemcpy(tensor, d_data, size * sizeof(__half), cudaMemcpyDeviceToHost);
     }
+
+    size_t get_cmpr_size() {
+        // byte数
+        int row = m % 32 ? m / 32 : m / 32 + 1;
+        int col = k % 32 ? k / 32 : k / 32 + 1;
+        return row * col * 32 * 32 / 8 > 256 ? row * col * 32 * 32 / 8 : 256;
+    }
 };
 
 struct MatrixParam {
@@ -392,24 +399,10 @@ struct MatrixParam {
         return ret;
     }
 
-    void generate_rand_2(int bound) {
-        if (A == nullptr)  A = new __half[m * k];
-        if (B == nullptr)  B = new __half[k * n];
-        if (C == nullptr)  C = new __half[m * n];
-        if (A_cmpr == nullptr)  A_cmpr = new __half[m * k / 2];
-        // byte: m * (k/2) * sizeof(__half)
-        // sizeof(__half) = 2, sizeof(int) = 4
-        if (index == nullptr)  index = new int[m * k / 4];
+    // 对 32x32 的矩阵进行index获取操作
 
-        // todo: A
+    void transfer_index() {
         
-        for (int i = 0; i < k * n; i++) {
-            B[i] = __int2half_rn(rand() % bound);
-        }
-        for (int i = 0; i < m * n; i++) {
-            C[i] = __int2half_rn(0);
-        }
-
     }
 };
 

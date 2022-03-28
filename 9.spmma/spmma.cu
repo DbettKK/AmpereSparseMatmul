@@ -98,7 +98,8 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     size_t index_t = compressed_size - m * k / 2 * sizeof(__half);
     cudaMemcpy(data_cmpr, dA_compressed, m * k / 2 * sizeof(__half), cudaMemcpyDeviceToHost);
     cudaMemcpy(index, dA_compressed + m * k / 2, index_t, cudaMemcpyDeviceToHost);
-    printf("cmpr_size: %d\n", compressed_size);
+    printf("cmpr_size: %d\n", compressed_size - m * k / 2 * sizeof(__half));
+    printf("my cmpr_size: %d\n", get_cmpr_size(m, k));
     printf("m * k: %d\n", m * k);
     printf("data_cmpr:\n");
     for (int i = 0; i < m; i++) {
@@ -107,8 +108,9 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
         }
         printf("\n");
     }
-
+    
     printf("index:\n");
+    printf("max_index: %d\n", index_t / sizeof(int));
     for (int i = 0; i < index_t / sizeof(int); i++) {
         if (index[i] == -286331154) continue;
         printf("%d: %d:", i, index[i]);
