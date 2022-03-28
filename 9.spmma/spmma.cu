@@ -142,9 +142,9 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
 // 	CHECK_CUDA(cudaEventCreate(&end_c_time));
 //
 //     CHECK_CUDA(cudaEventRecord(start_c_time));
-    printf("?:\n");
+
     CHECK_CUSPARSE( cusparseLtMatmul(&handle, &plan, &alpha, dA_compressed, dB, &beta, dC, dD, d_workspace, streams, num_streams) )
-    printf("?:\n");
+
 //     //time
 //     CHECK_CUDA(cudaEventRecord(end_c_time));
 // 	CHECK_CUDA(cudaEventSynchronize(end_c_time));
@@ -160,7 +160,7 @@ MatrixParam *spmma_matmul(const __half *matA_h, const __half *matB_h, int m_old,
     CHECK_CUSPARSE( cusparseLtMatmulPlanDestroy(&plan) )
     CHECK_CUSPARSE( cusparseLtDestroy(&handle) )
     //--------------------------------------------------------------------------
-
+    printf("?\n");
     ret->A = new __half[m_old * k_old];
     ret->B = new __half[k_old * n_old];
     ret->C = new __half[m_old * n_old];
